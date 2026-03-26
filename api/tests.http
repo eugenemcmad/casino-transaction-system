@@ -1,0 +1,67 @@
+### Health Check
+GET {{host}}/health
+
+> {%
+client.test("Request executed successfully", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+});
+%}
+
+### Get ALL transactions (No filtering)
+GET {{host}}/transactions
+Accept: application/json
+
+> {%
+client.test("GET /transactions returns JSON array", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+  const data = response.body;
+  client.assert(Array.isArray(data), "Response body is not an array");
+});
+%}
+
+### Get only 'win' transactions for ALL users
+GET {{host}}/transactions?transaction_type=win
+Accept: application/json
+
+### Get all transactions for a specific user
+GET {{host}}/transactions?user_id=1
+Accept: application/json
+
+### Get only 'bet' transactions for a specific user
+GET {{host}}/transactions?user_id=1&transaction_type=bet
+Accept: application/json
+
+> {%
+client.test("Amount is integer in API response", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+  if (Array.isArray(response.body) && response.body.length > 0) {
+    const amount = response.body[0].amount;
+    client.assert(Number.isInteger(amount), "amount is not an integer");
+  }
+});
+%}
+
+
+### Error cases testing
+
+### Invalid User ID format (Should return 400)
+GET {{host}}/transactions?user_id=invalid
+Accept: application/json
+
+### Non-positive User ID: zero (Should return 400)
+GET {{host}}/transactions?user_id=0
+Accept: application/json
+
+### Non-positive User ID: negative (Should return 400)
+GET {{host}}/transactions?user_id=-1
+Accept: application/json
+
+### Invalid Transaction Type in filter (Should return 400)
+GET {{host}}/transactions?transaction_type=bonus
+Accept: application/json
+
+> {%
+client.test("Invalid transaction_type returns 400", function() {
+  client.assert(response.status === 400, "Response status is not 400");
+});
+%}

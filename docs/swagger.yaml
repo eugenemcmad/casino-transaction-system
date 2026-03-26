@@ -1,0 +1,83 @@
+basePath: /
+definitions:
+  domain.TransactionType:
+    enum:
+    - bet
+    - win
+    type: string
+    x-enum-varnames:
+    - TransactionTypeBet
+    - TransactionTypeWin
+  http.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  http.TransactionResponse:
+    properties:
+      amount:
+        type: integer
+      timestamp:
+        type: string
+      transaction_type:
+        $ref: '#/definitions/domain.TransactionType'
+      user_id:
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: API for reading casino transactions.
+  title: Casino Transaction System API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Returns service health status.
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Health check
+      tags:
+      - health
+  /transactions:
+    get:
+      description: Returns transactions with optional filters by user_id and transaction_type.
+      parameters:
+      - description: Filter by user ID (>0)
+        in: query
+        name: user_id
+        type: integer
+      - description: Filter by type
+        enum:
+        - bet
+        - win
+        in: query
+        name: transaction_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/http.TransactionResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      summary: Get transactions
+      tags:
+      - transactions
+swagger: "2.0"
