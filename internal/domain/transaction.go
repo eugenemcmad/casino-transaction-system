@@ -1,16 +1,10 @@
 package domain
 
 import (
-	"errors"
 	"time"
 )
 
-var (
-	ErrInvalidUserID  = errors.New("user_id must be positive")
-	ErrInvalidAmount  = errors.New("amount must be positive")
-)
-
-// Transaction is the core domain model. It contains no JSON/DB tags 
+// Transaction is the core domain model. It contains no JSON/DB tags
 // and encapsulates its own business validation rules (Rich Domain Model).
 type Transaction struct {
 	ID        int64

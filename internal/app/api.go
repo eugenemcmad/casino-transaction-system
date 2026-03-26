@@ -13,13 +13,17 @@ import (
 type ApiApp struct {
 	cfg    *config.Config
 	server *http.Server
-	repo   *repository.PostgresRepo 
+	repo   *repository.PostgresRepo
 }
 
 func NewApiApp(cfg *config.Config) *ApiApp {
+	// 1. Data Layer
 	repo := repository.NewPostgresRepo(cfg.Postgres.URL)
+
+	// 2. Service Layer (Business Logic)
 	svc := service.NewTransactionService(repo)
 
+	// 3. Transport Layer (HTTP)
 	handler := transport.NewTransactionHandler(svc)
 	router := transport.NewRouter(handler)
 
@@ -49,7 +53,7 @@ func (a *ApiApp) Run(ctx context.Context) error {
 	<-ctx.Done()
 
 	slog.Info(MsgShuttingDownAPI)
-	
+
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), DefaultShutdownTimeout)
 	defer cancel()
 

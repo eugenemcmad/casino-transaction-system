@@ -10,9 +10,11 @@
 debug.*
 *.iml
 *.tmp.*
+*.temp.*
 temp.*
 *_local_test.*
 test.*
 *.test
 *.ps1
+technical-specifications.*
 

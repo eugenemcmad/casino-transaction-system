@@ -8,7 +8,7 @@ import (
 
 // transactionService implementation of TransactionService interface.
 type transactionService struct {
-	repo domain.TransactionRepository // Now using repository interface from domain
+	repo domain.TransactionRepository
 }
 
 func NewTransactionService(repo domain.TransactionRepository) TransactionService {

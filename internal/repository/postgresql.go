@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -33,7 +34,7 @@ func NewPostgresRepo(url string) *PostgresRepo {
 
 func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 	slog.Debug(MsgSavingToDB, "userID", t.UserID, "type", t.Type, "amount", t.Amount)
-	
+
 	var ts sql.NullTime
 	if !t.Timestamp.IsZero() {
 		ts.Time = t.Timestamp
@@ -49,25 +50,28 @@ func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 	return nil
 }
 
-// GetByUserID now supports optional userID filtering (if userID <= 0, returns all)
+// GetByUserID fetches transactions based on optional filters.
 func (r *PostgresRepo) GetByUserID(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 	slog.Debug(MsgFetchingFromDB, "userID", userID, "type", tType)
-	
-	query := QueryGetTransactionsBase
-	var args []any
-	argCount := 1
 
+	var conditions []string
+	var args []any
+
+	// Dynamic condition building
 	if userID > 0 {
-		query += fmt.Sprintf(" AND user_id = $%d", argCount)
 		args = append(args, userID)
-		argCount++
+		conditions = append(conditions, fmt.Sprintf("user_id = $%d", len(args)))
 	}
 
 	if tType != nil {
-		query += fmt.Sprintf(" AND type = $%d", argCount)
 		args = append(args, string(*tType))
+		conditions = append(conditions, fmt.Sprintf("type = $%d", len(args)))
 	}
 
+	query := QueryGetTransactionsBase
+	if len(conditions) > 0 {
+		query += " AND " + strings.Join(conditions, " AND ")
+	}
 	query += QueryOrderByTimestampDesc
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -82,19 +86,19 @@ func (r *PostgresRepo) GetByUserID(ctx context.Context, userID int64, tType *dom
 		var t domain.Transaction
 		var tTypeStr string
 		var ts sql.NullTime
-		
+
 		if err := rows.Scan(&t.UserID, &tTypeStr, &t.Amount, &ts, &t.CreatedAt); err != nil {
 			slog.Error(MsgFailedToScanRow, "error", err)
 			return nil, err
 		}
-		
+
 		t.Type = domain.TransactionType(tTypeStr)
 		if ts.Valid {
 			t.Timestamp = ts.Time
 		} else {
-			t.Timestamp = time.Time{} 
+			t.Timestamp = time.Time{}
 		}
-		
+
 		transactions = append(transactions, t)
 	}
 	if err := rows.Err(); err != nil {

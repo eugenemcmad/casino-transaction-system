@@ -18,8 +18,13 @@ type ProcessorApp struct {
 }
 
 func NewProcessorApp(cfg *config.Config) (*ProcessorApp, error) {
+	// 1. Data Layer
 	repo := repository.NewPostgresRepo(cfg.Postgres.URL)
+
+	// 2. Service Layer (Business Logic)
 	svc := service.NewTransactionService(repo)
+
+	// 3. Transport Layer (Kafka)
 	consumer := transport.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.Topic, cfg.Kafka.GroupID, svc)
 
 	slog.Info(MsgProcessorInitialized)
@@ -35,7 +40,7 @@ func (a *ProcessorApp) Run(ctx context.Context) error {
 	slog.Info(MsgStartingProcessor, "topic", a.cfg.Kafka.Topic)
 
 	err := a.consumer.Start(ctx)
-	
+
 	if a.repo != nil {
 		slog.Info(MsgClosingDBConnection)
 		a.repo.Close()
