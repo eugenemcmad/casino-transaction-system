@@ -1,0 +1,31 @@
+version: '3.8'
+
+# Production-like configuration: Only application services.
+# Assumes infrastructure (DB, Kafka) is provided by the environment/managed services.
+services:
+  api:
+    image: casino-api:latest # Pre-built image
+    container_name: casino_api_prod
+    environment:
+      - PG_URL=${PROD_PG_URL}
+      - KAFKA_BROKERS=${PROD_KAFKA_BROKERS}
+      - KAFKA_TOPIC=transactions
+      - APP_NAME=api-service
+      - APP_VERSION=${APP_VERSION:-1.0.0}
+      - LOG_LEVEL=info
+    ports:
+      - "80:8080"
+    restart: always
+
+  processor:
+    image: casino-processor:latest # Pre-built image
+    container_name: casino_processor_prod
+    environment:
+      - PG_URL=${PROD_PG_URL}
+      - KAFKA_BROKERS=${PROD_KAFKA_BROKERS}
+      - KAFKA_TOPIC=transactions
+      - KAFKA_GROUP_ID=processor-group-prod
+      - APP_NAME=processor-service
+      - APP_VERSION=${APP_VERSION:-1.0.0}
+      - LOG_LEVEL=info
+    restart: always

@@ -1,0 +1,18 @@
+app:
+  name: "casino-transaction-service"
+  version: "1.0.0"
+
+http:
+  port: "8080"
+
+logger:
+  log_level: "debug"
+
+postgres:
+  pool_max: 5
+  url: "postgres://postgres:pass@localhost:5432/casino?sslmode=disable"
+
+kafka:
+  brokers: ["localhost:9094"] # Using external port 9094 for local development outside Docker
+  topic: "transactions"
+  group_id: "processor-group"

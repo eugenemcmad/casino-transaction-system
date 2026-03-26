@@ -1,0 +1,17 @@
+/.idea/
+/.vscode/
+/bin/
+/out/
+/log/
+/logs/
+/tmp/
+/prev/
+*.log
+debug.*
+*.iml
+temp.*
+*_local_test.*
+test.*
+*.test
+*.ps1
+
