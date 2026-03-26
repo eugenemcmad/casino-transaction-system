@@ -9,8 +9,8 @@ import (
 type TransactionDTO struct {
 	UserID    int64                  `json:"user_id"`
 	Type      domain.TransactionType `json:"transaction_type"`
-	Amount    float64                `json:"amount"` 
-	Timestamp string                 `json:"timestamp"` // Standard string for flexible parsing
+	Amount    float64                `json:"amount"`
+	Timestamp string                 `json:"timestamp"`
 }
 
 func (dto TransactionDTO) ToDomain() domain.Transaction {

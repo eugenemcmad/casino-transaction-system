@@ -5,20 +5,21 @@ const (
 	DriverPostgres = "postgres"
 
 	// Log messages
-	MsgInitializingPostgres  = "Initializing Postgres connection"
-	MsgDBConnectionSuccess   = "DB connection established successfully"
-	MsgDBPingFailed          = "DB ping failed"
-	MsgErrorOpeningDB        = "Error opening DB connection"
-	MsgSavingToDB            = "Saving transaction to DB"
-	MsgTransactionSaved      = "Transaction saved successfully"
-	MsgFailedToInsert        = "Failed to insert transaction"
-	MsgFetchingFromDB        = "Fetching transactions from DB"
-	MsgFailedToQuery         = "Failed to query transactions"
-	MsgFailedToScanRow       = "Failed to scan transaction row"
-	MsgRowsError             = "Rows error after scanning"
-	MsgFetchedCount          = "Fetched transactions count"
-	MsgClosingPostgres       = "Closing Postgres connection"
-
+	MsgInitializingPostgres = "Initializing Postgres connection"
+	MsgDBConnectionSuccess  = "DB connection established successfully"
+	MsgDBPingFailed         = "DB ping failed"
+	MsgErrorOpeningDB       = "Error opening DB connection"
+	MsgSavingToDB           = "Saving transaction to DB"
+	MsgTransactionSaved     = "Transaction saved successfully"
+	MsgFailedToInsert       = "Failed to insert transaction"
+	MsgFetchingFromDB       = "Fetching transactions from DB"
+	MsgFailedToQuery        = "Failed to query transactions"
+	MsgFailedToScanRow      = "Failed to scan transaction row"
+	MsgRowsError            = "Rows error after scanning"
+	MsgFetchedCount         = "Fetched transactions count"
+	MsgClosingPostgres      = "Closing Postgres connection"
+	MsgFailedToCloseRows    = "Failed to close rows"
+	MsgErrorClosingDB       = "Error closing DB connection"
 	// SQL Queries
 	QueryInsertTransaction = `
 		INSERT INTO transactions (user_id, type, amount, timestamp)

@@ -16,6 +16,7 @@ type PostgresRepo struct {
 	db *sql.DB
 }
 
+// NewPostgresRepo initializes DB and sets up connection pool (Tech Lead improvement)
 func NewPostgresRepo(url string) *PostgresRepo {
 	slog.Debug(MsgInitializingPostgres, "url", url)
 	db, err := sql.Open(DriverPostgres, url)
@@ -23,7 +24,12 @@ func NewPostgresRepo(url string) *PostgresRepo {
 		slog.Error(MsgErrorOpeningDB, "error", err)
 		return nil
 	}
-	// Проверим подключение
+
+	// Pool configuration: production-ready settings
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
 	if err := db.Ping(); err != nil {
 		slog.Warn(MsgDBPingFailed, "error", err)
 	} else {
@@ -41,7 +47,14 @@ func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 		ts.Valid = true
 	}
 
-	_, err := r.db.ExecContext(ctx, QueryInsertTransaction, t.UserID, string(t.Type), t.Amount, ts)
+	// Idempotency: using business-key (user_id, type, amount, timestamp)
+	// ON CONFLICT DO NOTHING handles duplicates automatically (e.g. from Kafka retries)
+	query := `
+		INSERT INTO transactions (user_id, type, amount, timestamp)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (user_id, type, amount, timestamp) DO NOTHING
+	`
+	_, err := r.db.ExecContext(ctx, query, t.UserID, string(t.Type), t.Amount, ts)
 	if err != nil {
 		slog.Error(MsgFailedToInsert, "error", err, "transaction", t)
 		return err
@@ -57,7 +70,6 @@ func (r *PostgresRepo) GetByUserID(ctx context.Context, userID int64, tType *dom
 	var conditions []string
 	var args []any
 
-	// Dynamic condition building
 	if userID > 0 {
 		args = append(args, userID)
 		conditions = append(conditions, fmt.Sprintf("user_id = $%d", len(args)))
@@ -79,7 +91,12 @@ func (r *PostgresRepo) GetByUserID(ctx context.Context, userID int64, tType *dom
 		slog.Error(MsgFailedToQuery, "error", err, "userID", userID)
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			slog.Error(MsgFailedToCloseRows, "error", err)
+		}
+	}(rows)
 
 	var transactions []domain.Transaction
 	for rows.Next() {
@@ -95,8 +112,6 @@ func (r *PostgresRepo) GetByUserID(ctx context.Context, userID int64, tType *dom
 		t.Type = domain.TransactionType(tTypeStr)
 		if ts.Valid {
 			t.Timestamp = ts.Time
-		} else {
-			t.Timestamp = time.Time{}
 		}
 
 		transactions = append(transactions, t)
@@ -113,6 +128,9 @@ func (r *PostgresRepo) GetByUserID(ctx context.Context, userID int64, tType *dom
 func (r *PostgresRepo) Close() {
 	if r.db != nil {
 		slog.Debug(MsgClosingPostgres)
-		r.db.Close()
+		err := r.db.Close()
+		if err != nil {
+			slog.Error(MsgErrorClosingDB, "error", err)
+		}
 	}
 }
