@@ -1,14 +1,14 @@
 CREATE TABLE IF NOT EXISTS transactions (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    type VARCHAR(10) NOT NULL CHECK (type IN ('bet', 'win')),
-    amount NUMERIC(15, 2) NOT NULL,
-    timestamp TIMESTAMP WITH TIME ZONE,
+    type VARCHAR(10) NOT NULL CHECK (type IN ('bet', 'win')), -- "type" is more concise and matches the domain model field, and acceptable for PostgreSQL
+    amount NUMERIC(15, 2) NOT NULL, -- Numeric for accurate decimal storage (e.g. 5.55)
+    timestamp TIMESTAMP WITH TIME ZONE, -- Nullable to avoid losing data if event time is missing
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
     -- Idempotency: prevent exact same transaction from being recorded twice.
     -- Using NULLS NOT DISTINCT (Postgres 15+) to handle cases with missing timestamps.
-    UNIQUE NULLS NOT DISTINCT (user_id, type, amount, timestamp)
+    CONSTRAINT unique_transaction_key UNIQUE NULLS NOT DISTINCT (user_id, type, amount, timestamp)
 );
 
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id_type_time ON transactions(user_id, type, timestamp DESC);

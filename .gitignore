@@ -17,4 +17,6 @@ test.*
 *.test
 *.ps1
 technical-specifications.*
+coverage*
+
 

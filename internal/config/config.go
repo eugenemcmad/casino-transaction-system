@@ -47,12 +47,12 @@ var (
 	once     sync.Once
 )
 
-// NewConfig читает конфиг из файла (если есть) и перекрывает его переменными окружения
+// NewConfig reads config from file (if exists) and overrides it with environment variables
 func NewConfig() (*Config, error) {
 	var err error
 	once.Do(func() {
 		instance = &Config{}
-		
+
 		// 1. Берем путь из переменной окружения или используем дефолт
 		configPath := os.Getenv("CONFIG_PATH")
 		if configPath == "" {
@@ -81,4 +81,10 @@ func NewConfig() (*Config, error) {
 	}
 
 	return instance, nil
+}
+
+// ResetConfig is for testing purposes only, to reset the singleton config instance.
+func ResetConfig() {
+	once = sync.Once{}
+	instance = nil
 }

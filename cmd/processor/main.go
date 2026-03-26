@@ -20,7 +20,7 @@ func main() {
 	}
 
 	logger.SetupLogger(cfg.Log.Level)
-	slog.Info("Config loaded", cfg)
+	slog.Info("Config loaded", "app", cfg.App.Name, "version", cfg.App.Version)
 
 	// Создаем контекст, который отменится при Ctrl+C или docker stop
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

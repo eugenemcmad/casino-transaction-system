@@ -1,6 +1,6 @@
 module casino-transaction-system
 
-go 1.26
+go 1.24
 
 require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
