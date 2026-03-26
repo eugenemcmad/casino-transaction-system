@@ -4,6 +4,7 @@ import (
 	"casino-transaction-system/internal/domain"
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -48,15 +49,25 @@ func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 	return nil
 }
 
+// GetByUserID now supports optional userID filtering (if userID <= 0, returns all)
 func (r *PostgresRepo) GetByUserID(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 	slog.Debug(MsgFetchingFromDB, "userID", userID, "type", tType)
 	
 	query := QueryGetTransactionsBase
-	args := []any{userID}
+	var args []any
+	argCount := 1
+
+	if userID > 0 {
+		query += fmt.Sprintf(" AND user_id = $%d", argCount)
+		args = append(args, userID)
+		argCount++
+	}
+
 	if tType != nil {
-		query += " AND type = $2"
+		query += fmt.Sprintf(" AND type = $%d", argCount)
 		args = append(args, string(*tType))
 	}
+
 	query += QueryOrderByTimestampDesc
 
 	rows, err := r.db.QueryContext(ctx, query, args...)

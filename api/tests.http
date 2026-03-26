@@ -29,28 +29,26 @@ Content-Type: application/json
   "timestamp": "2023-10-27T11:30:00Z"
 }
 
-### Create a 'bet' transaction for User 1 (Most Recent)
+### Create a 'bet' transaction for User 2 (Different User)
 POST {{host}}/transactions
 Content-Type: application/json
 
 {
-  "user_id": 1,
+  "user_id": 2,
   "transaction_type": "bet",
   "amount": 25.75,
   "timestamp": "2023-10-27T12:00:00Z"
 }
 
-### Create a transaction WITHOUT timestamp (Should be saved with NULL)
-POST {{host}}/transactions
-Content-Type: application/json
+### Get ALL transactions (No filtering)
+GET {{host}}/transactions
+Accept: application/json
 
-{
-  "user_id": 1,
-  "transaction_type": "win",
-  "amount": 300.99
-}
+### Get only 'win' transactions for ALL users
+GET {{host}}/transactions?transaction_type=win
+Accept: application/json
 
-### Get all transactions for User 1 (Sorted by timestamp DESC, NULLS LAST)
+### Get all transactions for User 1
 GET {{host}}/transactions?user_id=1
 Accept: application/json
 
@@ -63,10 +61,6 @@ Accept: application/json
 
 ### Invalid User ID (Should return 400)
 GET {{host}}/transactions?user_id=invalid
-Accept: application/json
-
-### Missing User ID (Should return 400)
-GET {{host}}/transactions
 Accept: application/json
 
 ### Invalid Transaction Type (Should return 400)

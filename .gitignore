@@ -9,6 +9,7 @@
 *.log
 debug.*
 *.iml
+*.tmp.*
 temp.*
 *_local_test.*
 test.*

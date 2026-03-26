@@ -13,7 +13,7 @@ const (
 	MsgTransactionSaved      = "Transaction saved successfully"
 	MsgFailedToInsert        = "Failed to insert transaction"
 	MsgFetchingFromDB        = "Fetching transactions from DB"
-	MsgFailedToQuery         = "Failed to query transactions by user ID"
+	MsgFailedToQuery         = "Failed to query transactions"
 	MsgFailedToScanRow       = "Failed to scan transaction row"
 	MsgRowsError             = "Rows error after scanning"
 	MsgFetchedCount          = "Fetched transactions count"
@@ -27,7 +27,7 @@ const (
 	QueryGetTransactionsBase = `
 		SELECT user_id, type, amount, timestamp, created_at
 		FROM transactions
-		WHERE user_id = $1
+		WHERE 1=1
 	`
 	QueryOrderByTimestampDesc = " ORDER BY timestamp DESC NULLS LAST"
 )

@@ -8,10 +8,10 @@ import (
 
 // transactionService implementation of TransactionService interface.
 type transactionService struct {
-	repo TransactionRepository
+	repo domain.TransactionRepository // Now using repository interface from domain
 }
 
-func NewTransactionService(repo TransactionRepository) TransactionService {
+func NewTransactionService(repo domain.TransactionRepository) TransactionService {
 	slog.Debug("Initializing transactionService")
 	return &transactionService{repo: repo}
 }
