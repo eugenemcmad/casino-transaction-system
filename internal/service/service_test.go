@@ -18,7 +18,8 @@ func (m *mockRepo) Save(ctx context.Context, t domain.Transaction) error {
 	return nil
 }
 
-func (m *mockRepo) GetByUserID(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
+// Get implements domain.TransactionRepository (renamed from Find)
+func (m *mockRepo) Get(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 	if m.getFunc != nil {
 		return m.getFunc()
 	}

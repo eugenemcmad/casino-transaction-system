@@ -48,7 +48,6 @@ func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 	}
 
 	// Idempotency: using business-key (user_id, type, amount, timestamp)
-	// ON CONFLICT DO NOTHING handles duplicates automatically (e.g. from Kafka retries)
 	query := `
 		INSERT INTO transactions (user_id, type, amount, timestamp)
 		VALUES ($1, $2, $3, $4)
@@ -63,8 +62,8 @@ func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 	return nil
 }
 
-// GetByUserID fetches transactions based on optional filters.
-func (r *PostgresRepo) GetByUserID(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
+// Get fetches transactions based on optional filters.
+func (r *PostgresRepo) Get(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 	slog.Debug(MsgFetchingFromDB, "userID", userID, "type", tType)
 
 	var conditions []string
@@ -91,12 +90,7 @@ func (r *PostgresRepo) GetByUserID(ctx context.Context, userID int64, tType *dom
 		slog.Error(MsgFailedToQuery, "error", err, "userID", userID)
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			slog.Error(MsgFailedToCloseRows, "error", err)
-		}
-	}(rows)
+	defer rows.Close()
 
 	var transactions []domain.Transaction
 	for rows.Next() {
@@ -128,9 +122,6 @@ func (r *PostgresRepo) GetByUserID(ctx context.Context, userID int64, tType *dom
 func (r *PostgresRepo) Close() {
 	if r.db != nil {
 		slog.Debug(MsgClosingPostgres)
-		err := r.db.Close()
-		if err != nil {
-			slog.Error(MsgErrorClosingDB, "error", err)
-		}
+		r.db.Close()
 	}
 }

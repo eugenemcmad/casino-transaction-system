@@ -23,5 +23,5 @@ func (s *transactionService) RegisterTransaction(ctx context.Context, t domain.T
 
 func (s *transactionService) GetTransactions(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 	slog.Debug("Getting transactions history", "userID", userID, "type", tType)
-	return s.repo.GetByUserID(ctx, userID, tType)
+	return s.repo.Get(ctx, userID, tType) // Changed from Find to Get
 }
