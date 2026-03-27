@@ -9,8 +9,13 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+type messageReader interface {
+	ReadMessage(context.Context) (kafka.Message, error)
+	Close() error
+}
+
 type Consumer struct {
-	reader *kafka.Reader
+	reader messageReader
 	svc    service.TransactionService
 }
 
