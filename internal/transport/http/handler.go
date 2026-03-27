@@ -4,7 +4,6 @@ import (
 	"casino-transaction-system/internal/domain"
 	"casino-transaction-system/internal/service"
 	"encoding/json"
-	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -19,54 +18,8 @@ func NewTransactionHandler(svc service.TransactionService) *TransactionHandler {
 	return &TransactionHandler{svc: svc}
 }
 
-// CreateTransaction exists for TESTING purposes only (as per tech specs).
-func (h *TransactionHandler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("HTTP CreateTransaction request received")
-	
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		slog.Error("failed to read request body", "error", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	var req CreateTransactionRequest
-	if err := json.Unmarshal(body, &req); err != nil {
-		slog.Warn("HTTP Body Unmarshal failed (REJECTED)", 
-			"error", err, 
-			"raw_payload", string(body),
-		)
-		http.Error(w, MsgInvalidRequestBody, http.StatusBadRequest)
-		return
-	}
-
-	t := req.ToDomain()
-	
-	if err := t.Validate(); err != nil {
-		slog.Warn("HTTP transaction validation failed (REJECTED)", 
-			"error", err, 
-			"reason", err.Error(),
-			"raw_payload", string(body),
-		)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if req.Timestamp == "" {
-		slog.Warn(MsgMissingZeroTimestamp, "userID", req.UserID)
-	}
-
-	if err := h.svc.RegisterTransaction(r.Context(), t); err != nil {
-		slog.Error(MsgFailedToRegisterTransaction, "error", err)
-		http.Error(w, MsgFailedToRegisterTransaction, http.StatusInternalServerError)
-		return
-	}
-
-	slog.Info(MsgTransactionProcessed, "userID", t.UserID, "type", t.Type, "amount", t.Amount)
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"status": StatusRegistered})
-}
-
+// GetTransactions retrieves the transaction history.
+// Supports filtering by user_id and transaction_type.
 func (h *TransactionHandler) GetTransactions(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("HTTP GetTransactions request received", "query", r.URL.RawQuery)
 	userIDStr := r.URL.Query().Get("user_id")

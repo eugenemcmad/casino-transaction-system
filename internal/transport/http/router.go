@@ -8,12 +8,10 @@ import (
 func NewRouter(handler *TransactionHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	// GET: История транзакций
+	// GET: Transaction history retrieval
 	mux.HandleFunc("GET /transactions", handler.GetTransactions)
 
-	// POST: TODO: RM: Создание транзакции (опционально, для удобства тестирования)
-	mux.HandleFunc("POST /transactions", handler.CreateTransaction)
-
+	// GET: Health check endpoint
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, err := w.Write([]byte("OK"))

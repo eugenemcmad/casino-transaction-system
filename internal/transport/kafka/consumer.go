@@ -47,8 +47,8 @@ func (c *Consumer) Start(ctx context.Context) error {
 
 		var dto TransactionDTO
 		if err := json.Unmarshal(msg.Value, &dto); err != nil {
-			slog.Error(MsgFailedToUnmarshalMessage, 
-				"error", err, 
+			slog.Error(MsgFailedToUnmarshalMessage,
+				"error", err,
 				"raw_payload", string(msg.Value),
 				"offset", msg.Offset,
 			)
@@ -57,27 +57,25 @@ func (c *Consumer) Start(ctx context.Context) error {
 
 		t := dto.ToDomain()
 
-		// Validate domain model before processing (Business Rules)
 		if err := t.Validate(); err != nil {
-			slog.Warn("Kafka transaction validation failed (REJECTED)", 
-				"error", err, 
+			slog.Warn("Kafka transaction validation failed (REJECTED)",
+				"error", err,
 				"reason", err.Error(),
 				"dto", dto,
 				"raw_payload", string(msg.Value),
 				"offset", msg.Offset,
 			)
-			continue // Skip invalid transaction
+			continue
 		}
 
 		if dto.Timestamp == "" {
 			slog.Warn(MsgMissingZeroTimestamp, "userID", dto.UserID, "offset", msg.Offset)
 		}
 
-		// Separate context for processing
 		processCtx, cancel := context.WithTimeout(context.Background(), ProcessTransactionTimeout)
-		
+
 		err = c.svc.RegisterTransaction(processCtx, t)
-		cancel() 
+		cancel()
 
 		if err != nil {
 			slog.Error(MsgFailedToProcessTransaction, "error", err, "userID", dto.UserID)

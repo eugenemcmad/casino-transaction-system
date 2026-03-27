@@ -7,39 +7,6 @@ client.test("Request executed successfully", function() {
 });
 %}
 
-### Create a 'bet' transaction for User 1 (Decimal Amount)
-POST {{host}}/transactions
-Content-Type: application/json
-
-{
-  "user_id": 1,
-  "transaction_type": "bet",
-  "amount": 10.50,
-  "timestamp": "2023-10-27T10:00:00Z"
-}
-
-### Create a 'win' transaction for User 1 (Integer Amount, Newer)
-POST {{host}}/transactions
-Content-Type: application/json
-
-{
-  "user_id": 1,
-  "transaction_type": "win",
-  "amount": 50,
-  "timestamp": "2023-10-27T11:30:00Z"
-}
-
-### Create a 'bet' transaction for User 2 (Different User)
-POST {{host}}/transactions
-Content-Type: application/json
-
-{
-  "user_id": 2,
-  "transaction_type": "bet",
-  "amount": 25.75,
-  "timestamp": "2023-10-27T12:00:00Z"
-}
-
 ### Get ALL transactions (No filtering)
 GET {{host}}/transactions
 Accept: application/json
@@ -48,37 +15,21 @@ Accept: application/json
 GET {{host}}/transactions?transaction_type=win
 Accept: application/json
 
-### Get all transactions for User 1
+### Get all transactions for a specific user
 GET {{host}}/transactions?user_id=1
 Accept: application/json
 
-### Get only 'bet' transactions for User 1
+### Get only 'bet' transactions for a specific user
 GET {{host}}/transactions?user_id=1&transaction_type=bet
 Accept: application/json
 
 
 ### Error cases testing
 
-### Invalid User ID (Should return 400)
+### Invalid User ID format (Should return 400)
 GET {{host}}/transactions?user_id=invalid
 Accept: application/json
 
-### Invalid Transaction Type (Should return 400)
-POST {{host}}/transactions
-Content-Type: application/json
-
-{
-  "user_id": 1,
-  "transaction_type": "bonus",
-  "amount": 100
-}
-
-### Negative amount (Should return 400)
-POST {{host}}/transactions
-Content-Type: application/json
-
-{
-  "user_id": 1,
-  "transaction_type": "bet",
-  "amount": -5.50
-}
+### Invalid Transaction Type in filter (Should return 400)
+GET {{host}}/transactions?transaction_type=bonus
+Accept: application/json
