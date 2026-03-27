@@ -2,19 +2,20 @@
 
 Go service that ingests **bet/win** transactions from **Kafka**, stores them in **PostgreSQL**, and exposes a **JSON HTTP API** to query history with optional filters.
 
+## Documentation
+
+| Doc | Contents |
+|-----|----------|
+| **[`DEVELOPMENT.md`](DEVELOPMENT.md)** | Clone, build, migrations, run (Docker Compose or local binaries), tests, coverage, Make targets |
+| **[`TESTING.md`](TESTING.md)** | Test types, naming, style (not how to run — see `DEVELOPMENT.md`) |
+
 ---
 
-## Prerequisites
+## Quick prerequisites
 
-- **Go** 1.25+ (see `go.mod`; toolchain may download automatically)
-- **Docker Desktop** (or Docker Engine) — for Compose, integration tests, and E2E tests that use testcontainers
-- **PostgreSQL** 15+ — if you run binaries locally without Compose
-
----
-
-## Build, run, and test
-
-For a **step-by-step checklist** (clone, compile binaries, Docker Compose vs local processes, unit / integration / E2E tests, coverage, optional lint), see **[`DEVELOPMENT.md`](DEVELOPMENT.md)**.
+- **Go** 1.25+ (`go.mod`)
+- **Docker** — Compose-based run and integration/E2E tests (testcontainers)
+- **PostgreSQL 15+** — only if you run the apps outside Compose without your own DB image
 
 ---
 
@@ -53,63 +54,14 @@ go run ./cmd/api
 
 Copy [`config.yaml`](config.yaml) and adjust URLs for your environment.
 
----
-
-## Database migrations
-
-SQL files live in [`migrations/`](migrations/). Apply them with [`golang-migrate/migrate`](https://github.com/golang-migrate/migrate) or use the **migrate** service in Docker Compose (see below).
-
-Example (local `migrate` CLI):
-
-```bash
-migrate -path migrations -database "postgres://postgres:pass@localhost:5432/casino?sslmode=disable" up
-```
-
----
-
-## Run locally (two processes)
-
-1. Start **PostgreSQL** and **Kafka**, apply migrations, create the topic if needed.
-2. **Processor** (consumes Kafka, writes DB):
-
-   ```bash
-   go run ./cmd/processor
-   ```
-
-3. **API** (queries DB):
-
-   ```bash
-   go run ./cmd/api
-   ```
-
----
-
-## Run with Docker Compose (dev stack)
-
-Builds API and processor images, starts Postgres, Kafka, runs migrations, then apps:
-
-```bash
-docker compose -f docker-compose.dev.yaml up -d --build
-```
-
-- API: `http://localhost:8080`
-- Swagger UI: `http://localhost:8080/swagger/index.html`
-- Tear down (including volumes):
-
-  ```bash
-  docker compose -f docker-compose.dev.yaml down -v
-  ```
-
-Requires **Docker Compose V2** (for `service_completed_successfully` on the migrate job).
-
-Production-style compose (external DB/Kafka): [`docker-compose.prod.yaml`](docker-compose.prod.yaml) — set `PROD_PG_URL` and `PROD_KAFKA_BROKERS` in the environment.
+**Run the full stack, migrations, and tests:** [`DEVELOPMENT.md`](DEVELOPMENT.md).
 
 ---
 
 ## HTTP API (summary)
 
 | Method | Path | Description |
-|--------|------|----------------|
+|--------|------|-------------|
 | `GET` | `/health` | Liveness — `200` and body `OK` |
 | `GET` | `/transactions` | JSON list; optional `user_id` (positive integer), `transaction_type` (`bet` or `win`) |
 
@@ -119,46 +71,10 @@ More examples: [`api/tests.http`](api/tests.http).
 
 ---
 
-## Testing
-
-| Command | What runs |
-|---------|-----------|
-| `go test ./...` | Unit tests (default) |
-| `go test -tags=integration ./...` | Unit + integration (Docker/testcontainers) |
-| `go test -tags=e2e ./...` | Includes E2E (Kafka + Postgres + API; long-running) |
-
-Same commands via Make: `make test`, `make test-integration`, `make test-e2e`. Full workflow and coverage commands: [`DEVELOPMENT.md`](DEVELOPMENT.md#test).
-
-Coverage (statement):
-
-```bash
-go test -coverprofile=coverage.out ./...
-go tool cover -func coverage.out
-```
-
-Conventions: [`TESTING.md`](TESTING.md). Target coverage per task: **≥ 85%**.
-
-Integration/E2E need a working **Docker** daemon (Linux containers; on Windows use Docker Desktop).
-
----
-
-## Makefile shortcuts
-
-On Linux/macOS (Git Bash / WSL), `make help` lists targets. Examples:
-
-- `make build-api` / `make build-processor` — binaries under `bin/`
-- `make test` / `make test-integration` / `make test-e2e`
-- `make cover` — coverage report
-- `make docker-up` / `make docker-down` — dev Compose (uses `docker-compose` CLI name; use `docker compose` if you prefer the plugin)
-
----
-
 ## Repository layout (short)
 
 | Path | Role |
 |------|------|
-| `DEVELOPMENT.md` | Build / run / test checklist for reviewers |
-| `TESTING.md` | Test naming and style |
 | `cmd/api`, `cmd/processor` | Entrypoints |
 | `internal/bootstrap` | Wiring (DB, HTTP, Kafka) |
 | `internal/domain` | Domain model and ports |
@@ -169,3 +85,4 @@ On Linux/macOS (Git Bash / WSL), `make help` lists targets. Examples:
 | `pkg/money`, `pkg/timeutil` | Shared parsing helpers |
 | `e2e/` | End-to-end tests (`go:build e2e`) |
 
+**Compose:** dev stack [`docker-compose.dev.yaml`](docker-compose.dev.yaml); production-style (external DB/Kafka) [`docker-compose.prod.yaml`](docker-compose.prod.yaml) — set `PROD_PG_URL` and `PROD_KAFKA_BROKERS`.

@@ -1,36 +1,35 @@
-# Testing Guidelines
+# Testing guidelines
 
-How to **run** tests (commands, Docker, coverage): [`DEVELOPMENT.md`](DEVELOPMENT.md#test).
+**How to run tests** (commands, Docker, coverage, Make): [`DEVELOPMENT.md`](DEVELOPMENT.md#testing).
 
-## Test Types
+## Test types
 
-- **Unit tests**: default tests, no build tags.
-- **Integration tests**: use `//go:build integration` and `*_integration_test.go`.
-- **E2E tests**: use `//go:build e2e` and `*_e2e_test.go` under `e2e/`.
+- **Unit:** default build, no tags.
+- **Integration:** `//go:build integration`, files `*_integration_test.go`.
+- **E2E:** `//go:build e2e`, files under `e2e/` (e.g. `*_e2e_test.go`).
 
 ## Naming
 
-- Test functions: `Test<Subject>_<Behavior>`.
-- Subtests (`t.Run`): use `ok/...` and `err/...`.
-- Table-driven variables: prefer `cases`, `tc`, `want`, `got`, `wantErr`.
+- Functions: `Test<Subject>_<Behavior>`.
+- Subtests (`t.Run`): `ok/...` and `err/...`.
+- Table-driven helpers: `cases`, `tc`, `want`, `got`, `wantErr`.
 
-## Test Style
+## Style
 
-- Use **table-driven tests** for multiple input/output combinations.
-- Use **scenario-style tests** for heavy setup (e.g., `sqlmock`, containers, full flow checks).
-- Do not mix unrelated concerns in one test function.
+- **Table-driven** tests for many input/output pairs.
+- **Scenario-style** for heavy setup (`sqlmock`, containers, full flows).
+- One concern per test function.
 
 ## Assertions
 
-- Keep assertions explicit and focused.
-- Compare behavior, not implementation details.
-- Prefer clear failure messages with expected vs actual values.
+- Prefer behavior over implementation details.
+- Clear failures (expected vs actual).
 
 ## Logging
 
-- In tests, use `t.Log` / `t.Logf` (not `fmt.Println`).
-- Avoid emoji in test output.
+- Use `t.Log` / `t.Logf`, not `fmt.Println`.
+- No emoji in test output.
 
-## Execution
+## Coverage
 
-See [`DEVELOPMENT.md#test`](DEVELOPMENT.md#test) for commands and Makefile targets.
+Target for the task: **≥ 85%** statement coverage where practical.
