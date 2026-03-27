@@ -45,9 +45,12 @@ type (
 	}
 
 	Kafka struct {
-		Brokers []string `env-required:"true" env:"KAFKA_BROKERS"`
-		Topic   string   `env-required:"true" env:"KAFKA_TOPIC"`
-		GroupID string   `env-default:"processor-group" env:"KAFKA_GROUP_ID"`
+		Brokers          []string `yaml:"brokers" env-required:"true" env:"KAFKA_BROKERS"`
+		Topic            string   `yaml:"topic" env-required:"true" env:"KAFKA_TOPIC"`
+		GroupID          string   `yaml:"group_id" env-default:"processor-group" env:"KAFKA_GROUP_ID"`
+		ProcessTimeoutMs int      `yaml:"process_timeout_ms" env-default:"5000" env:"KAFKA_PROCESS_TIMEOUT_MS"`
+		RetryBaseDelayMs int      `yaml:"retry_base_delay_ms" env-default:"100" env:"KAFKA_RETRY_BASE_DELAY_MS"`
+		RetryJitterMs    int      `yaml:"retry_jitter_ms" env-default:"300" env:"KAFKA_RETRY_JITTER_MS"`
 	}
 )
 
@@ -113,6 +116,15 @@ func loadConfig() (*Config, error) {
 	}
 	if cfg.Postgres.PoolMaxIdle <= 0 {
 		cfg.Postgres.PoolMaxIdle = 5
+	}
+	if cfg.Kafka.ProcessTimeoutMs <= 0 {
+		cfg.Kafka.ProcessTimeoutMs = 5000
+	}
+	if cfg.Kafka.RetryBaseDelayMs <= 0 {
+		cfg.Kafka.RetryBaseDelayMs = 100
+	}
+	if cfg.Kafka.RetryJitterMs <= 0 {
+		cfg.Kafka.RetryJitterMs = 300
 	}
 
 	return cfg, nil

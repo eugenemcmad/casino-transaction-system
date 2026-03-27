@@ -9,6 +9,8 @@ const (
 
 	// Timeouts
 	ProcessTransactionTimeout = 5 * time.Second
+	RetryBackoffBaseDelay     = 100 * time.Millisecond
+	RetryBackoffMaxJitter     = 300 * time.Millisecond
 
 	// Log messages
 	MsgKafkaShuttingDown          = "Kafka consumer shutting down..."

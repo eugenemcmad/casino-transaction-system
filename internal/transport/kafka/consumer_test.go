@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"casino-transaction-system/internal/config"
 	"casino-transaction-system/internal/domain"
 	"context"
 	"errors"
@@ -66,7 +67,7 @@ func TestTransactionDTO_ToDomain(t *testing.T) {
 
 func TestNewConsumer_CreatesConsumer(t *testing.T) {
 	svc := &mockSvc{}
-	c := NewConsumer([]string{"127.0.0.1:9092"}, "test-topic", "test-group", svc)
+	c := NewConsumer([]string{"127.0.0.1:9092"}, "test-topic", "test-group", svc, config.Kafka{})
 	if c == nil {
 		t.Fatal("NewConsumer() returned nil")
 	}

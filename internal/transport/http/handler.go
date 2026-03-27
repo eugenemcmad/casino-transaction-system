@@ -54,8 +54,7 @@ func (h *TransactionHandler) GetTransactions(w http.ResponseWriter, r *http.Requ
 
 	transactions, err := h.svc.GetTransactions(r.Context(), userID, tType)
 	if err != nil {
-		slog.Error(MsgFailedToGetTransactions, "error", err, "userID", userID)
-		http.Error(w, MsgFailedToGetTransactions, http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return
 	}
 

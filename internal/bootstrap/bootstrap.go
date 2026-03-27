@@ -53,7 +53,7 @@ func NewProcessorApp(cfg *config.Config) (*app.ProcessorApp, error) {
 	}
 
 	svc := service.NewTransactionService(repo)
-	consumer := kafkatransport.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.Topic, cfg.Kafka.GroupID, svc)
+	consumer := kafkatransport.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.Topic, cfg.Kafka.GroupID, svc, cfg.Kafka)
 
 	return app.NewProcessorApp(cfg, consumer, repo), nil
 }

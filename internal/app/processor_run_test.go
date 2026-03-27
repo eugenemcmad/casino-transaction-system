@@ -14,7 +14,7 @@ func TestProcessorApp_Run_CanceledContext(t *testing.T) {
 	cfg.Kafka.Topic = "test-topic"
 	cfg.Kafka.GroupID = "test-group"
 
-	consumer := transport.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.Topic, cfg.Kafka.GroupID, service.NewTransactionService(nil))
+	consumer := transport.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.Topic, cfg.Kafka.GroupID, service.NewTransactionService(nil), cfg.Kafka)
 	app := &ProcessorApp{
 		cfg:      cfg,
 		consumer: consumer,

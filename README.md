@@ -31,3 +31,19 @@ You are tasked with building a simple transaction management system for a casino
    ○ Provide a README file with any relevant instructions
    Submission:
    ● Please submit the source code (how you prefer) along with the README file.
+
+## Runtime Configuration
+
+The service uses `config.yaml` (or `CONFIG_PATH`) and environment overrides.
+
+- HTTP:
+  - `HTTP_PORT`
+  - `HTTP_READ_HEADER_TIMEOUT_SECONDS`
+  - `HTTP_READ_TIMEOUT_SECONDS`
+  - `HTTP_WRITE_TIMEOUT_SECONDS`
+  - `HTTP_IDLE_TIMEOUT_SECONDS`
+- Postgres:
+  - `PG_URL`
+  - `PG_POOL_MAX_OPEN`
+  - `PG_POOL_MAX_IDLE`
+  - `PG_CONN_MAX_LIFETIME_MINUTES`

@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"sync"
 )
 
 type resourceCloser interface {
@@ -12,9 +13,10 @@ type resourceCloser interface {
 }
 
 type ApiApp struct {
-	cfg    *config.Config
-	server *http.Server
-	closer resourceCloser
+	cfg       *config.Config
+	server    *http.Server
+	closer    resourceCloser
+	closeOnce sync.Once
 }
 
 func NewApiApp(cfg *config.Config, server *http.Server, closer resourceCloser) *ApiApp {
@@ -42,10 +44,7 @@ func (a *ApiApp) Run(ctx context.Context) error {
 	case err := <-serverErrCh:
 		if err != nil && err != http.ErrServerClosed {
 			slog.Error(MsgHTTPServerError, "err", err)
-			if a.closer != nil {
-				slog.Info(MsgClosingDBConnection)
-				a.closer.Close()
-			}
+			a.closeResources()
 			return err
 		}
 	}
@@ -59,10 +58,16 @@ func (a *ApiApp) Run(ctx context.Context) error {
 		slog.Error(MsgHTTPServerShutdown, "err", err)
 	}
 
-	if a.closer != nil {
-		slog.Info(MsgClosingDBConnection)
-		a.closer.Close()
-	}
+	a.closeResources()
 
 	return nil
+}
+
+func (a *ApiApp) closeResources() {
+	a.closeOnce.Do(func() {
+		if a.closer != nil {
+			slog.Info(MsgClosingDBConnection)
+			a.closer.Close()
+		}
+	})
 }

@@ -3,6 +3,7 @@ package money
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -12,6 +13,7 @@ var (
 	ErrInvalidAmount      = errors.New("amount format is invalid")
 	ErrTooManyDecimals    = errors.New("amount has more than 2 decimal places")
 	ErrInvalidDecimalPart = errors.New("amount decimal part is invalid")
+	ErrAmountOverflow     = errors.New("amount overflows int64 range")
 )
 
 // ParseToMinorUnits parses a string amount into minor units (int64).
@@ -67,5 +69,22 @@ func ParseToMinorUnits(raw string) (int64, error) {
 		return 0, fmt.Errorf("%w: %v", ErrInvalidDecimalPart, err)
 	}
 
-	return sign * (intPart*100 + fracPart), nil
+	if intPart > math.MaxInt64/100 {
+		return 0, ErrAmountOverflow
+	}
+	if intPart < math.MinInt64/100 {
+		return 0, ErrAmountOverflow
+	}
+
+	base := intPart * 100
+	if base > math.MaxInt64-fracPart {
+		return 0, ErrAmountOverflow
+	}
+
+	result := base + fracPart
+	if sign < 0 {
+		return -result, nil
+	}
+
+	return result, nil
 }

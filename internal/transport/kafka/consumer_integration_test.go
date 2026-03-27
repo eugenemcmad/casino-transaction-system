@@ -3,6 +3,7 @@
 package kafka
 
 import (
+	"casino-transaction-system/internal/config"
 	"casino-transaction-system/internal/domain"
 	"casino-transaction-system/internal/testutil"
 	"context"
@@ -43,7 +44,7 @@ func TestKafkaConsumer_IntegrationFlow(t *testing.T) {
 	}
 
 	// 2. Start Consumer
-	consumer := NewConsumer([]string{broker}, topic, "test-group-"+topic, mockSvc)
+	consumer := NewConsumer([]string{broker}, topic, "test-group-"+topic, mockSvc, config.Kafka{})
 	go func() {
 		_ = consumer.Start(ctx)
 	}()

@@ -4,12 +4,18 @@ app:
 
 http:
   port: "8080"
+  read_header_timeout_seconds: 5
+  read_timeout_seconds: 10
+  write_timeout_seconds: 15
+  idle_timeout_seconds: 60
 
 logger:
   log_level: "debug"
 
 postgres:
-  pool_max: 5
+  pool_max_open: 25
+  pool_max_idle: 5
+  conn_max_lifetime_minutes: 5
   url: "postgres://postgres:pass@localhost:5432/casino?sslmode=disable"
 
 kafka:
