@@ -1,3 +1,4 @@
+// Package bootstrap is the composition root: wires config, repository, transports, and app shells.
 package bootstrap
 
 import (
@@ -12,6 +13,7 @@ import (
 	"time"
 )
 
+// NewApiApp builds Postgres, services, HTTP router, and returns an app.ApiApp ready to Run.
 func NewApiApp(cfg *config.Config) (*app.ApiApp, error) {
 	poolCfg := repository.PoolConfig{
 		MaxOpenConns:    cfg.Postgres.PoolMaxOpen,
@@ -40,6 +42,7 @@ func NewApiApp(cfg *config.Config) (*app.ApiApp, error) {
 	return app.NewApiApp(cfg, server, repo), nil
 }
 
+// NewProcessorApp builds Postgres, services, Kafka consumer, and returns a ProcessorApp ready to Run.
 func NewProcessorApp(cfg *config.Config) (*app.ProcessorApp, error) {
 	poolCfg := repository.PoolConfig{
 		MaxOpenConns:    cfg.Postgres.PoolMaxOpen,

@@ -1,3 +1,4 @@
+// Package domain defines the core transaction model, validation, and persistence port.
 package domain
 
 import (

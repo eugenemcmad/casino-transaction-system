@@ -7,6 +7,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// NewRouter registers transaction, health, and Swagger routes on a new ServeMux.
 func NewRouter(handler *TransactionHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
@@ -22,7 +23,8 @@ func NewRouter(handler *TransactionHandler) *http.ServeMux {
 	return mux
 }
 
-// healthHandler godoc
+// healthHandler responds with 200 and plain-text "OK".
+//
 // @Summary Health check
 // @Description Returns service health status.
 // @Tags health

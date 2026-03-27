@@ -1,3 +1,4 @@
+// Package http exposes REST handlers and JSON DTOs for the transaction API.
 package http
 
 import (
@@ -9,16 +10,19 @@ import (
 	"strconv"
 )
 
+// TransactionHandler serves HTTP endpoints backed by TransactionService.
 type TransactionHandler struct {
 	svc service.TransactionService
 }
 
+// NewTransactionHandler creates a handler with the given service.
 func NewTransactionHandler(svc service.TransactionService) *TransactionHandler {
 	slog.Debug("Initializing TransactionHandler")
 	return &TransactionHandler{svc: svc}
 }
 
-// GetTransactions godoc
+// GetTransactions handles GET /transactions with optional user_id and transaction_type query filters.
+//
 // @Summary Get transactions
 // @Description Returns transactions with optional filters by user_id and transaction_type.
 // @Tags transactions

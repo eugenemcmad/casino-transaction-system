@@ -10,12 +10,14 @@ type consumerRunner interface {
 	Start(ctx context.Context) error
 }
 
+// ProcessorApp runs the Kafka consumer and closes shared resources after Stop.
 type ProcessorApp struct {
 	cfg      *config.Config
 	consumer consumerRunner
 	closer   resourceCloser
 }
 
+// NewProcessorApp constructs the Kafka processor runtime.
 func NewProcessorApp(cfg *config.Config, consumer consumerRunner, closer resourceCloser) *ProcessorApp {
 	slog.Info(MsgProcessorInitialized)
 
@@ -26,6 +28,7 @@ func NewProcessorApp(cfg *config.Config, consumer consumerRunner, closer resourc
 	}
 }
 
+// Run blocks until the consumer returns (typically on ctx cancellation), then closes resources.
 func (a *ProcessorApp) Run(ctx context.Context) error {
 	slog.Info(MsgStartingProcessor, "topic", a.cfg.Kafka.Topic)
 

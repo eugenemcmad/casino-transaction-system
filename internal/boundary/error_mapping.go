@@ -1,3 +1,4 @@
+// Package boundary maps infrastructure and parsing errors to HTTP-oriented metadata and stable codes.
 package boundary
 
 import (
@@ -8,6 +9,7 @@ import (
 	"net/http"
 )
 
+// ErrorMeta describes how an error should be surfaced to HTTP and logs (code, status, retry hints).
 type ErrorMeta struct {
 	Code       string
 	HTTPStatus int
@@ -16,6 +18,7 @@ type ErrorMeta struct {
 	Retryable  bool
 }
 
+// Classify maps known errors to stable codes; unknown errors become internal_error.
 func Classify(err error) ErrorMeta {
 	switch {
 	case errors.Is(err, repository.ErrRepoNotInitialized):

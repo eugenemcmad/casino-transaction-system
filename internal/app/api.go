@@ -1,3 +1,4 @@
+// Package app hosts runnable application shells (API HTTP server and Kafka processor).
 package app
 
 import (
@@ -12,6 +13,7 @@ type resourceCloser interface {
 	Close()
 }
 
+// ApiApp runs the HTTP server and owns lifecycle of injected resources (e.g. database).
 type ApiApp struct {
 	cfg       *config.Config
 	server    *http.Server
@@ -19,6 +21,7 @@ type ApiApp struct {
 	closeOnce sync.Once
 }
 
+// NewApiApp constructs the HTTP API runtime. closer is closed on shutdown or fatal listen errors.
 func NewApiApp(cfg *config.Config, server *http.Server, closer resourceCloser) *ApiApp {
 	slog.Info(MsgAPIInitialized)
 
@@ -29,6 +32,8 @@ func NewApiApp(cfg *config.Config, server *http.Server, closer resourceCloser) *
 	}
 }
 
+// Run starts ListenAndServe in a goroutine, waits for ctx cancel or a non-recoverable listen error,
+// then performs graceful Shutdown and closes resources once.
 func (a *ApiApp) Run(ctx context.Context) error {
 	slog.Info(MsgStartingAPI, "port", a.cfg.HTTP.Port)
 
@@ -63,6 +68,7 @@ func (a *ApiApp) Run(ctx context.Context) error {
 	return nil
 }
 
+// closeResources invokes closer at most once (e.g. DB pool).
 func (a *ApiApp) closeResources() {
 	a.closeOnce.Do(func() {
 		if a.closer != nil {

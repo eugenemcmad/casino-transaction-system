@@ -6,11 +6,12 @@ import (
 	"log/slog"
 )
 
-// transactionService implementation of TransactionService interface.
+// transactionService is the default TransactionService implementation.
 type transactionService struct {
 	repo domain.TransactionRepository
 }
 
+// NewTransactionService wires the domain repository into the use case implementation.
 func NewTransactionService(repo domain.TransactionRepository) TransactionService {
 	slog.Debug("Initializing transactionService")
 	return &transactionService{repo: repo}
@@ -23,5 +24,5 @@ func (s *transactionService) RegisterTransaction(ctx context.Context, t domain.T
 
 func (s *transactionService) GetTransactions(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 	slog.Debug("Getting transactions history", "userID", userID, "type", tType)
-	return s.repo.Get(ctx, userID, tType) // Changed from Find to Get
+	return s.repo.Get(ctx, userID, tType)
 }

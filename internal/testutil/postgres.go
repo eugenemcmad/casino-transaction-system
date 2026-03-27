@@ -1,5 +1,6 @@
 //go:build integration || test || e2e
 
+// Package testutil spins up Postgres and Kafka via testcontainers for integration and e2e tests.
 package testutil
 
 import (

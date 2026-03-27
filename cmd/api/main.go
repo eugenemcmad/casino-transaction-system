@@ -2,6 +2,8 @@
 // @version 1.0
 // @description API for reading casino transactions.
 // @BasePath /
+//
+// Command api runs the HTTP server for querying transactions (see /swagger/).
 package main
 
 import (
@@ -27,7 +29,7 @@ func main() {
 	logger.SetupLogger(cfg.Log.Level)
 	slog.Info("Config loaded", "app", cfg.App.Name, "version", cfg.App.Version)
 
-	// Создаем контекст, который отменится при Ctrl+C или docker stop
+	// Cancel on SIGINT/SIGTERM (e.g. Ctrl+C or docker stop).
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -37,7 +39,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Запуск блокирует main до отмены контекста
+	// Run blocks until the context is cancelled or the server fails.
 	if err := apiApp.Run(ctx); err != nil {
 		slog.Error("API stopped with error", slog.Any("error", err))
 		os.Exit(1)

@@ -1,3 +1,4 @@
+// Package money parses monetary amounts from decimal strings into int64 minor units.
 package money
 
 import (
@@ -8,6 +9,7 @@ import (
 	"strings"
 )
 
+// Parsing and range errors for amount strings.
 var (
 	ErrEmptyAmount        = errors.New("amount is empty")
 	ErrInvalidAmount      = errors.New("amount format is invalid")

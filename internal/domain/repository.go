@@ -4,10 +4,10 @@ import (
 	"context"
 )
 
-// TransactionRepository defines the data storage requirements (Domain Port).
+// TransactionRepository defines the persistence port for transactions.
 type TransactionRepository interface {
+	// Save inserts a transaction; implementations may treat duplicates as no-ops.
 	Save(ctx context.Context, t Transaction) error
-	// Get retrieves transactions based on optional filters.
-	// If userID is 0, it fetches for all users.
+	// Get returns transactions filtered by optional user and type (userID 0 means all users).
 	Get(ctx context.Context, userID int64, tType *TransactionType) ([]Transaction, error)
 }

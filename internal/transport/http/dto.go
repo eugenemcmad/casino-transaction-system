@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// CreateTransactionRequest is the JSON body for registering a transaction (multi-format amount string/number).
 type CreateTransactionRequest struct {
 	UserID          int64                  `json:"user_id"`
 	TransactionType domain.TransactionType `json:"transaction_type"`
@@ -16,6 +17,7 @@ type CreateTransactionRequest struct {
 	Timestamp       string                 `json:"timestamp"` // Standard string for flexible parsing
 }
 
+// UnmarshalJSON accepts amount as either a JSON string or number and normalizes it to a decimal string.
 func (r *CreateTransactionRequest) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		UserID          int64                  `json:"user_id"`
@@ -51,6 +53,7 @@ func (r *CreateTransactionRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// ToDomain maps the request to a domain.Transaction (amount in minor units; timestamp parsed best-effort).
 func (r CreateTransactionRequest) ToDomain() (domain.Transaction, error) {
 	parsedTime, _ := timeutil.Parse(r.Timestamp)
 	amount, err := money.ParseToMinorUnits(r.Amount)
@@ -66,6 +69,7 @@ func (r CreateTransactionRequest) ToDomain() (domain.Transaction, error) {
 	}, nil
 }
 
+// TransactionResponse is the JSON representation returned by GET /transactions.
 type TransactionResponse struct {
 	UserID          int64                  `json:"user_id"`
 	TransactionType domain.TransactionType `json:"transaction_type"`
@@ -73,6 +77,7 @@ type TransactionResponse struct {
 	Timestamp       time.Time              `json:"timestamp"`
 }
 
+// NewTransactionResponse maps a domain transaction to the API response DTO.
 func NewTransactionResponse(t domain.Transaction) TransactionResponse {
 	return TransactionResponse{
 		UserID:          t.UserID,

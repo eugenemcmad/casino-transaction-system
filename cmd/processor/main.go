@@ -1,3 +1,4 @@
+// Command processor runs the Kafka consumer that persists transactions to PostgreSQL.
 package main
 
 import (
@@ -21,7 +22,7 @@ func main() {
 	logger.SetupLogger(cfg.Log.Level)
 	slog.Info("Config loaded", "app", cfg.App.Name, "version", cfg.App.Version)
 
-	// Создаем контекст, который отменится при Ctrl+C или docker stop
+	// Cancel on SIGINT/SIGTERM (e.g. Ctrl+C or docker stop).
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -31,7 +32,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Запуск блокирует main до отмены контекста
+	// Run blocks until the context is cancelled or the consumer returns an error.
 	if err := processorApp.Run(ctx); err != nil {
 		slog.Error("Processor stopped with error", slog.Any("error", err))
 		os.Exit(1)

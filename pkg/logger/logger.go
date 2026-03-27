@@ -1,3 +1,4 @@
+// Package logger configures the global slog logger as JSON to stdout.
 package logger
 
 import (

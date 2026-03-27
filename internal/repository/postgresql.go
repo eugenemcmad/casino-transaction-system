@@ -1,3 +1,4 @@
+// Package repository implements domain.TransactionRepository against PostgreSQL.
 package repository
 
 import (
@@ -12,16 +13,19 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// PostgresRepo persists transactions using database/sql and the pq driver.
 type PostgresRepo struct {
 	db *sql.DB
 }
 
+// PoolConfig configures sql.DB connection pool limits and connection lifetime.
 type PoolConfig struct {
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
 }
 
+// DefaultPoolConfig is used when NewPostgresRepo is called without explicit pool settings.
 var DefaultPoolConfig = PoolConfig{
 	MaxOpenConns:    25,
 	MaxIdleConns:    5,
@@ -34,6 +38,7 @@ func NewPostgresRepo(url string) (*PostgresRepo, error) {
 	return NewPostgresRepoWithPool(url, DefaultPoolConfig)
 }
 
+// NewPostgresRepoWithPool opens a pool, applies poolCfg (with defaults for zero values), and pings the DB.
 func NewPostgresRepoWithPool(url string, poolCfg PoolConfig) (*PostgresRepo, error) {
 	slog.Debug(MsgInitializingPostgres, "url", url)
 	db, err := sql.Open(DriverPostgres, url)
@@ -66,6 +71,7 @@ func NewPostgresRepoWithPool(url string, poolCfg PoolConfig) (*PostgresRepo, err
 	return &PostgresRepo{db: db}, nil
 }
 
+// Save inserts a transaction; duplicates matching the unique key are ignored (ON CONFLICT DO NOTHING).
 func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 	if r == nil || r.db == nil {
 		return ErrRepoNotInitialized
@@ -154,6 +160,7 @@ func (r *PostgresRepo) Get(ctx context.Context, userID int64, tType *domain.Tran
 	return transactions, nil
 }
 
+// Close closes the underlying database handle.
 func (r *PostgresRepo) Close() {
 	if r.db != nil {
 		slog.Debug(MsgClosingPostgres)

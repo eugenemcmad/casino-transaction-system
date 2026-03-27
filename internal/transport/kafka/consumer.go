@@ -1,3 +1,4 @@
+// Package kafka implements a Kafka consumer that decodes DTOs and registers domain transactions.
 package kafka
 
 import (
@@ -18,12 +19,14 @@ type messageReader interface {
 	Close() error
 }
 
+// Consumer reads JSON transaction messages and dispatches them to TransactionService.
 type Consumer struct {
 	reader messageReader
 	svc    service.TransactionService
 	cfg    config.Kafka
 }
 
+// NewConsumer builds a kafka-go reader and consumer with retry/backoff settings from cfg.
 func NewConsumer(brokers []string, topic, groupID string, svc service.TransactionService, cfg config.Kafka) *Consumer {
 	slog.Debug("Initializing Kafka Consumer", "brokers", brokers, "topic", topic, "groupID", groupID)
 	reader := kafka.NewReader(kafka.ReaderConfig{
@@ -41,6 +44,8 @@ func NewConsumer(brokers []string, topic, groupID string, svc service.Transactio
 	}
 }
 
+// Start blocks reading messages until ctx is cancelled or the reader fails permanently.
+// Invalid payloads are skipped; transient read/process errors apply a jittered backoff.
 func (c *Consumer) Start(ctx context.Context) error {
 	slog.Info("Starting Kafka consumer loop...")
 	c.cfg = withDefaultKafkaConfig(c.cfg)
@@ -115,6 +120,7 @@ func (c *Consumer) Start(ctx context.Context) error {
 	}
 }
 
+// pauseWithJitter waits for a short randomized delay or ctx cancellation to avoid hot loops.
 func (c *Consumer) pauseWithJitter(ctx context.Context) {
 	cfg := withDefaultKafkaConfig(c.cfg)
 	delay := time.Duration(cfg.RetryBaseDelayMs)*time.Millisecond + time.Duration(rand.Int63n(int64(time.Duration(cfg.RetryJitterMs)*time.Millisecond)))
@@ -127,6 +133,7 @@ func (c *Consumer) pauseWithJitter(ctx context.Context) {
 	}
 }
 
+// withDefaultKafkaConfig fills zero kafka timeout/backoff fields from package defaults.
 func withDefaultKafkaConfig(cfg config.Kafka) config.Kafka {
 	if cfg.ProcessTimeoutMs <= 0 {
 		cfg.ProcessTimeoutMs = int(ProcessTransactionTimeout / time.Millisecond)

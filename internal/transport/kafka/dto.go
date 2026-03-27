@@ -9,6 +9,7 @@ import (
 	"log/slog"
 )
 
+// TransactionDTO is the Kafka JSON payload for a transaction (amount as string or JSON number).
 type TransactionDTO struct {
 	UserID    int64                  `json:"user_id"`
 	Type      domain.TransactionType `json:"transaction_type"`
@@ -16,6 +17,7 @@ type TransactionDTO struct {
 	Timestamp string                 `json:"timestamp"`
 }
 
+// UnmarshalJSON normalizes amount from string or number into a decimal string for parsing.
 func (dto *TransactionDTO) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		UserID    int64                  `json:"user_id"`
@@ -50,6 +52,7 @@ func (dto *TransactionDTO) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// ToDomain converts the DTO to a domain transaction (amount in minor units).
 func (dto TransactionDTO) ToDomain() (domain.Transaction, error) {
 	parsedTime, err := timeutil.Parse(dto.Timestamp)
 	if err != nil && dto.Timestamp != "" {
