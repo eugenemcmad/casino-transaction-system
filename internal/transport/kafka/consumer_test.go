@@ -60,6 +60,17 @@ func TestTransactionDTO_ToDomain(t *testing.T) {
 	}
 }
 
+func TestNewConsumer(t *testing.T) {
+	svc := &mockSvc{}
+	c := NewConsumer([]string{"127.0.0.1:9092"}, "test-topic", "test-group", svc)
+	if c == nil {
+		t.Fatal("NewConsumer() returned nil")
+	}
+	if c.reader == nil {
+		t.Fatal("NewConsumer() reader is nil")
+	}
+}
+
 type mockReader struct {
 	mu       sync.Mutex
 	messages []kafkago.Message

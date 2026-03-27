@@ -18,6 +18,7 @@ test.*
 *.ps1
 technical-specifications.*
 tech-spec.*
+*.out
 coverage*
-
+logger
 
