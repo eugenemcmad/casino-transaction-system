@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"testing"
+	"time"
 )
 
 func TestMain_ExitsOnInvalidConfig(t *testing.T) {
@@ -24,7 +26,10 @@ func TestMain_ExitsOnInvalidConfig(t *testing.T) {
 		t.Fatalf("Close() error: %v", err)
 	}
 
-	cmd := exec.Command(os.Args[0], "-test.run=TestMain_ExitsOnInvalidConfig")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=TestMain_ExitsOnInvalidConfig")
 	cmd.Env = append(os.Environ(),
 		"GO_WANT_HELPER_PROCESS=1",
 		"CONFIG_PATH="+tmpFile.Name(),
@@ -50,7 +55,10 @@ func TestMain_ExitsOnProcessorAppInitError(t *testing.T) {
 		return
 	}
 
-	cmd := exec.Command(os.Args[0], "-test.run=TestMain_ExitsOnProcessorAppInitError")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=TestMain_ExitsOnProcessorAppInitError")
 	cmd.Env = append(os.Environ(),
 		"GO_WANT_HELPER_PROCESS=1",
 		"CONFIG_PATH=does-not-exist.yaml",
