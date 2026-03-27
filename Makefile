@@ -7,10 +7,10 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 build-api: ## Build the API binary
-	go build -o bin/api ./cmd/api/main.go
+	go build -o bin/api ./cmd/api
 
 build-processor: ## Build the Processor binary
-	go build -o bin/processor ./cmd/processor/main.go
+	go build -o bin/processor ./cmd/processor
 
 test: ## Run unit tests (standard)
 	go test -v ./...

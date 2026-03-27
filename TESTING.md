@@ -1,5 +1,7 @@
 # Testing Guidelines
 
+How to **run** tests (commands, Docker, coverage): [`DEVELOPMENT.md`](DEVELOPMENT.md#test).
+
 ## Test Types
 
 - **Unit tests**: default tests, no build tags.
@@ -31,6 +33,4 @@
 
 ## Execution
 
-- Unit: `go test ./...`
-- Integration: `go test -tags=integration ./...`
-- E2E: `go test -tags=e2e ./...`
+See [`DEVELOPMENT.md#test`](DEVELOPMENT.md#test) for commands and Makefile targets.

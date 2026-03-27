@@ -1,3 +1,4 @@
+# Builder: toolchain auto-download matches go.mod (e.g. go 1.25) when base image is older.
 FROM golang:1.24-alpine AS builder
 
 RUN apk add --no-cache git ca-certificates
@@ -6,10 +7,11 @@ WORKDIR /app
 
 COPY go.mod go.sum ./
 ENV GOPROXY=https://proxy.golang.org,direct
+ENV GOTOOLCHAIN=auto
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o processor-server ./cmd/processor/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o processor-server ./cmd/processor
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates tzdata

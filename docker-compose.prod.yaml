@@ -1,12 +1,12 @@
-version: '3.8'
-
-# Production-like configuration: Only application services.
-# Assumes infrastructure (DB, Kafka) is provided by the environment/managed services.
+# Production-like stack: only app containers. DB/Kafka are external.
+# Set PROD_PG_URL and PROD_KAFKA_BROKERS in the environment (or an .env file).
+# Images must ship config.yaml or you must supply all required env vars (see internal/config).
 services:
   api:
     image: casino-api:latest # Pre-built image
     container_name: casino_api_prod
     environment:
+      - CONFIG_PATH=config.yaml
       - PG_URL=${PROD_PG_URL}
       - KAFKA_BROKERS=${PROD_KAFKA_BROKERS}
       - KAFKA_TOPIC=transactions
@@ -21,6 +21,7 @@ services:
     image: casino-processor:latest # Pre-built image
     container_name: casino_processor_prod
     environment:
+      - CONFIG_PATH=config.yaml
       - PG_URL=${PROD_PG_URL}
       - KAFKA_BROKERS=${PROD_KAFKA_BROKERS}
       - KAFKA_TOPIC=transactions

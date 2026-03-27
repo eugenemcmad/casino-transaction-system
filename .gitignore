@@ -5,6 +5,12 @@
 /log/
 /logs/
 /tmp/
+**/tmp/
+/temp/
+**/temp/
+# Names containing tmp or temp anywhere (scratch / drafts)
+*tmp*
+*temp*
 /prev/
 *.log
 debug.*
@@ -21,4 +27,5 @@ tech-spec.*
 *.out
 coverage*
 logger
+.cursorignore
 
