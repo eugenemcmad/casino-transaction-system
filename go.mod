@@ -7,7 +7,6 @@ require (
 	github.com/lib/pq v1.12.0
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/testcontainers/testcontainers-go v0.41.0
-	github.com/testcontainers/testcontainers-go/modules/kafka v0.41.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.41.0
 )
 
