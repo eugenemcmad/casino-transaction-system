@@ -12,9 +12,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// TestPostgresRepo_Integration provides isolated testing for the Data Access Layer.
+// TestPostgresRepo_IntegrationFlow provides isolated testing for the data access layer.
 // It uses testcontainers to ensure a clean, real PostgreSQL environment.
-func TestPostgresRepo_Integration(t *testing.T) {
+func TestPostgresRepo_IntegrationFlow(t *testing.T) {
 	// 1. Setup isolated database
 	connStr, cleanup := testutil.SetupPostgres(t)
 	defer cleanup()
@@ -22,7 +22,7 @@ func TestPostgresRepo_Integration(t *testing.T) {
 	repo := NewPostgresRepo(connStr)
 	ctx := context.Background()
 
-	t.Run("Action: Save and Handle Idempotency", func(t *testing.T) {
+	t.Run("ok/save_is_idempotent", func(t *testing.T) {
 		tr := domain.Transaction{
 			UserID:    12345,
 			Type:      domain.TransactionTypeBet,
@@ -47,7 +47,7 @@ func TestPostgresRepo_Integration(t *testing.T) {
 		}
 	})
 
-	t.Run("Action: Filter and Sort transactions", func(t *testing.T) {
+	t.Run("ok/get_sorts_by_timestamp_desc", func(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Second)
 		_ = repo.Save(ctx, domain.Transaction{UserID: 1, Type: "bet", Amount: 10, Timestamp: now.Add(-time.Hour)})
 		_ = repo.Save(ctx, domain.Transaction{UserID: 1, Type: "win", Amount: 20, Timestamp: now})

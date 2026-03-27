@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestNewApiApp(t *testing.T) {
+func TestNewApiApp_CreatesInstance(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.HTTP.Port = "8084" // Unique port
 	cfg.Postgres.URL = "postgres://localhost:5432/db"
@@ -34,7 +34,7 @@ func TestApiApp_Run_Shutdown(t *testing.T) {
 	}
 }
 
-func TestNewProcessorApp(t *testing.T) {
+func TestNewProcessorApp_CreatesInstance(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.Postgres.URL = "postgres://localhost:5432/db"
 	cfg.Kafka.Brokers = []string{"localhost:9092"}

@@ -18,8 +18,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// TestAPI_Integration verifies HTTP handlers using a real database managed by testcontainers.
-func TestAPI_Integration(t *testing.T) {
+// TestAPI_IntegrationFlow verifies HTTP handlers using a real database managed by testcontainers.
+func TestAPI_IntegrationFlow(t *testing.T) {
 	// 1. Initialize temporary Postgres via testutil
 	connStr, cleanup := testutil.SetupPostgres(t)
 	defer cleanup()
@@ -36,7 +36,7 @@ func TestAPI_Integration(t *testing.T) {
 	}
 	defer db.Close()
 
-	t.Run("Scenario: Filter history by userID", func(t *testing.T) {
+	t.Run("ok/filters_by_user_id", func(t *testing.T) {
 		// Clear table before run
 		_, _ = db.Exec("DELETE FROM transactions")
 
@@ -56,7 +56,7 @@ func TestAPI_Integration(t *testing.T) {
 		}
 	})
 
-	t.Run("Scenario: Fetch transactions for all users", func(t *testing.T) {
+	t.Run("ok/returns_all_users_when_no_filters", func(t *testing.T) {
 		_, _ = db.Exec("DELETE FROM transactions")
 		repo.Save(ctx, domain.Transaction{UserID: 1, Type: "bet", Amount: 10})
 		repo.Save(ctx, domain.Transaction{UserID: 2, Type: "win", Amount: 20})

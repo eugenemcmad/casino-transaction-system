@@ -15,13 +15,16 @@ build-processor: ## Build the Processor binary
 test: ## Run unit tests (standard)
 	go test -v ./...
 
-test-integration: ## Run unit and integration tests (requires DB up)
+test- e2e: ## Run unit and end-to-end tests
+	go test -v -tags=e2e ./...
+
+test-integration: ## Run unit and integration tests
 	go test -v -tags=integration ./...
 
 test-race: ## Run unit tests with race detection (requires CGO)
 	CGO_ENABLED=1 go test -v -race ./...
 
-cover: ## Run all tests and show coverage (including integration)
+cover: ## Run all tests and show coverage
 	go test -v -coverprofile=coverage.out ./...
 	go tool cover -func coverage.out
 

@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-func TestParse(t *testing.T) {
-	tests := []struct {
+func TestParse_SupportsKnownFormats(t *testing.T) {
+	cases := []struct {
 		name      string
 		input     string
 		wantYear  int
@@ -15,7 +15,7 @@ func TestParse(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name:      "RFC3339 format",
+			name:      "ok/rfc3339_format",
 			input:     "2023-10-27T10:00:00Z",
 			wantYear:  2023,
 			wantMonth: 10,
@@ -23,7 +23,7 @@ func TestParse(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:      "Unix Seconds (string)",
+			name:      "ok/unix_seconds_string",
 			input:     "1698393600",
 			wantYear:  2023,
 			wantMonth: 10,
@@ -31,7 +31,7 @@ func TestParse(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:      "Unix Milliseconds (string)",
+			name:      "ok/unix_milliseconds_string",
 			input:     "1698393600000",
 			wantYear:  2023,
 			wantMonth: 10,
@@ -39,7 +39,7 @@ func TestParse(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:      "DateTime format",
+			name:      "ok/datetime_format",
 			input:     "2023-10-27 10:00:00",
 			wantYear:  2023,
 			wantMonth: 10,
@@ -47,7 +47,7 @@ func TestParse(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:      "Simple Date format",
+			name:      "ok/simple_date_format",
 			input:     "2023-10-27",
 			wantYear:  2023,
 			wantMonth: 10,
@@ -55,27 +55,28 @@ func TestParse(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:      "Empty input",
-			input:     "",
-			wantErr:   true,
+			name:    "err/empty_input",
+			input:   "",
+			wantErr: true,
 		},
 		{
-			name:      "Invalid format",
-			input:     "not-a-date",
-			wantErr:   true,
+			name:    "err/invalid_format",
+			input:   "not-a-date",
+			wantErr: true,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := Parse(tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := Parse(tc.input)
+			if (err != nil) != tc.wantErr {
+				t.Errorf("Parse() error = %v, wantErr %v", err, tc.wantErr)
 				return
 			}
-			if !tt.wantErr {
-				if got.Year() != tt.wantYear || got.Month() != tt.wantMonth || got.Day() != tt.wantDay {
-					t.Errorf("Parse() = %v, want date %d-%02d-%02d", got, tt.wantYear, tt.wantMonth, tt.wantDay)
+			if !tc.wantErr {
+				if got.Year() != tc.wantYear || got.Month() != tc.wantMonth || got.Day() != tc.wantDay {
+					t.Errorf("Parse() = %v, want date %d-%02d-%02d", got, tc.wantYear, tc.wantMonth, tc.wantDay)
 				}
 			}
 		})

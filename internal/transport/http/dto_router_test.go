@@ -10,7 +10,7 @@ import (
 )
 
 func TestCreateTransactionRequest_ToDomain(t *testing.T) {
-	t.Run("parses valid timestamp", func(t *testing.T) {
+	t.Run("ok/parses_valid_timestamp", func(t *testing.T) {
 		req := CreateTransactionRequest{
 			UserID:          11,
 			TransactionType: domain.TransactionTypeWin,
@@ -27,7 +27,7 @@ func TestCreateTransactionRequest_ToDomain(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid timestamp becomes zero time", func(t *testing.T) {
+	t.Run("err/invalid_timestamp_returns_zero_time", func(t *testing.T) {
 		req := CreateTransactionRequest{
 			UserID:          1,
 			TransactionType: domain.TransactionTypeBet,
@@ -42,7 +42,7 @@ func TestCreateTransactionRequest_ToDomain(t *testing.T) {
 	})
 }
 
-func TestNewRouter(t *testing.T) {
+func TestNewRouter_RegistersHealthRoute(t *testing.T) {
 	handler := NewTransactionHandler(&mockService{
 		getTransactionsFunc: func(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 			return []domain.Transaction{}, nil

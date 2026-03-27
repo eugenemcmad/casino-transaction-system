@@ -12,13 +12,13 @@ import (
 )
 
 func TestTransactionDTO_ToDomain(t *testing.T) {
-	tests := []struct {
+	cases := []struct {
 		name string
 		dto  TransactionDTO
 		want domain.Transaction
 	}{
 		{
-			name: "Valid Conversion",
+			name: "ok/converts_valid_dto",
 			dto: TransactionDTO{
 				UserID:    1,
 				Type:      "bet",
@@ -32,7 +32,7 @@ func TestTransactionDTO_ToDomain(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Timestamp - returns zero time",
+			name: "err/invalid_timestamp_returns_zero_time",
 			dto: TransactionDTO{
 				UserID:    1,
 				Type:      "win",
@@ -47,20 +47,21 @@ func TestTransactionDTO_ToDomain(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.dto.ToDomain()
-			if got.UserID != tt.want.UserID || got.Type != tt.want.Type || got.Amount != tt.want.Amount {
-				t.Errorf("ToDomain() = %+v, want %+v", got, tt.want)
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.dto.ToDomain()
+			if got.UserID != tc.want.UserID || got.Type != tc.want.Type || got.Amount != tc.want.Amount {
+				t.Errorf("ToDomain() = %+v, want %+v", got, tc.want)
 			}
-			if tt.dto.Timestamp == "invalid-date" && !got.Timestamp.IsZero() {
-				t.Error("Expected zero timestamp for invalid input")
+			if tc.dto.Timestamp == "invalid-date" && !got.Timestamp.IsZero() {
+				t.Error("expected zero timestamp for invalid input")
 			}
 		})
 	}
 }
 
-func TestNewConsumer(t *testing.T) {
+func TestNewConsumer_CreatesConsumer(t *testing.T) {
 	svc := &mockSvc{}
 	c := NewConsumer([]string{"127.0.0.1:9092"}, "test-topic", "test-group", svc)
 	if c == nil {

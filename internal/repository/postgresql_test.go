@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewPostgresRepo(t *testing.T) {
-	t.Run("invalid DSN still creates repo object", func(t *testing.T) {
+	t.Run("ok/returns_repo_for_invalid_dsn", func(t *testing.T) {
 		repo := NewPostgresRepo("://invalid-dsn")
 		if repo == nil {
 			t.Fatal("NewPostgresRepo() expected non-nil repo")
@@ -20,7 +20,7 @@ func TestNewPostgresRepo(t *testing.T) {
 		repo.Close()
 	})
 
-	t.Run("unreachable db still returns repo instance", func(t *testing.T) {
+	t.Run("ok/returns_repo_for_unreachable_db", func(t *testing.T) {
 		repo := NewPostgresRepo("postgres://user:pass@127.0.0.1:1/testdb?sslmode=disable")
 		if repo == nil {
 			t.Fatal("NewPostgresRepo() expected non-nil repo")
@@ -30,7 +30,7 @@ func TestNewPostgresRepo(t *testing.T) {
 }
 
 func TestPostgresRepo_Save(t *testing.T) {
-	t.Run("save with timestamp", func(t *testing.T) {
+	t.Run("ok/saves_with_timestamp", func(t *testing.T) {
 		db, mock, err := sqlmock.New()
 		if err != nil {
 			t.Fatalf("sqlmock.New() error = %v", err)
@@ -58,7 +58,7 @@ func TestPostgresRepo_Save(t *testing.T) {
 		}
 	})
 
-	t.Run("save returns db error", func(t *testing.T) {
+	t.Run("err/returns_db_error_on_insert", func(t *testing.T) {
 		db, mock, err := sqlmock.New()
 		if err != nil {
 			t.Fatalf("sqlmock.New() error = %v", err)
@@ -83,7 +83,7 @@ func TestPostgresRepo_Save(t *testing.T) {
 }
 
 func TestPostgresRepo_Get(t *testing.T) {
-	t.Run("get with all filters and nullable timestamp", func(t *testing.T) {
+	t.Run("ok/returns_rows_with_nullable_timestamp", func(t *testing.T) {
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("sqlmock.New() error = %v", err)
@@ -120,7 +120,7 @@ func TestPostgresRepo_Get(t *testing.T) {
 		}
 	})
 
-	t.Run("get returns query error", func(t *testing.T) {
+	t.Run("err/returns_query_error", func(t *testing.T) {
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("sqlmock.New() error = %v", err)
@@ -142,7 +142,7 @@ func TestPostgresRepo_Get(t *testing.T) {
 		}
 	})
 
-	t.Run("get returns scan error", func(t *testing.T) {
+	t.Run("err/returns_scan_error", func(t *testing.T) {
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("sqlmock.New() error = %v", err)
@@ -164,7 +164,7 @@ func TestPostgresRepo_Get(t *testing.T) {
 }
 
 func TestPostgresRepo_Close(t *testing.T) {
-	t.Run("close with non nil db", func(t *testing.T) {
+	t.Run("ok/closes_non_nil_db", func(t *testing.T) {
 		db, mock, err := sqlmock.New()
 		if err != nil {
 			t.Fatalf("sqlmock.New() error = %v", err)
@@ -179,7 +179,7 @@ func TestPostgresRepo_Close(t *testing.T) {
 		}
 	})
 
-	t.Run("close with nil db", func(t *testing.T) {
+	t.Run("ok/handles_nil_db", func(t *testing.T) {
 		repo := &PostgresRepo{}
 		repo.Close()
 	})

@@ -25,7 +25,7 @@ import (
 
 // TestTransactionFlow_E2E verifies the entire asynchronous chain:
 // Kafka -> Processor -> PostgreSQL -> HTTP API
-func TestTransactionFlow_E2E(t *testing.T) {
+func TestTransactionFlow_EndToEnd(t *testing.T) {
 	// 1. Setup Infrastructure using testutil
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
@@ -67,15 +67,15 @@ func TestTransactionFlow_E2E(t *testing.T) {
 	go apiApp.Run(appCtx)
 	go processorApp.Run(appCtx)
 
-	// ⏳ Give components time to fully stabilize (consumer group join etc.)
-	fmt.Println("⏳ Waiting for Processor to stabilize...")
+	// Give components time to fully stabilize (consumer group join etc.)
+	t.Log("waiting for processor to stabilize")
 	time.Sleep(15 * time.Second)
 
 	// 4. Act: Seed message to Kafka
 	testUserID := int64(123456789)
 	testAmount := 123.45
 
-	fmt.Println("🚀 Seeding transaction message to Kafka...")
+	t.Log("seeding transaction message to Kafka")
 	writer := &kafkago.Writer{Addr: kafkago.TCP(broker), Topic: topic, RequiredAcks: kafkago.RequireAll}
 	defer writer.Close()
 
@@ -89,10 +89,10 @@ func TestTransactionFlow_E2E(t *testing.T) {
 	if err := writer.WriteMessages(ctx, kafkago.Message{Value: payload}); err != nil {
 		t.Fatalf("failed to send test message: %v", err)
 	}
-	fmt.Println("✅ Message seeded successfully.")
+	t.Log("message seeded successfully")
 
 	// 5. Assert: Verify result via Query API (Polling)
-	fmt.Println("⏳ Polling Query API for result...")
+	t.Log("polling query API for result")
 	apiURL := "http://127.0.0.1:8083"
 	var transactions []transport.TransactionResponse
 	success := false
@@ -113,7 +113,7 @@ func TestTransactionFlow_E2E(t *testing.T) {
 	}
 
 	if !success {
-		t.Fatal("❌ E2E Flow failed: transaction was not found in DB via API")
+		t.Fatal("e2e flow failed: transaction was not found in DB via API")
 	}
 
 	// 6. Data Validation
@@ -121,5 +121,5 @@ func TestTransactionFlow_E2E(t *testing.T) {
 	if got.UserID != testUserID || got.Amount != testAmount {
 		t.Errorf("data mismatch: expected userID %d and amount %v, got %+v", testUserID, testAmount, got)
 	}
-	fmt.Println("✅ E2E transaction flow verified successfully!")
+	t.Log("e2e transaction flow verified successfully")
 }

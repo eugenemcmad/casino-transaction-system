@@ -7,27 +7,25 @@ import (
 	"testing"
 )
 
-// mockRepo - простая реализация мока для тестов
-type mockRepo struct {
+type mockRepository struct {
 	saveCalled bool
 	getFunc    func() ([]domain.Transaction, error)
 }
 
-func (m *mockRepo) Save(ctx context.Context, t domain.Transaction) error {
+func (m *mockRepository) Save(ctx context.Context, t domain.Transaction) error {
 	m.saveCalled = true
 	return nil
 }
 
-// Get implements domain.TransactionRepository (renamed from Find)
-func (m *mockRepo) Get(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
+func (m *mockRepository) Get(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 	if m.getFunc != nil {
 		return m.getFunc()
 	}
 	return nil, nil
 }
 
-func TestTransactionService_RegisterTransaction(t *testing.T) {
-	repo := &mockRepo{}
+func TestTransactionService_RegisterTransaction_CallsRepositorySave(t *testing.T) {
+	repo := &mockRepository{}
 	svc := NewTransactionService(repo)
 
 	tr := domain.Transaction{UserID: 1, Type: domain.TransactionTypeBet, Amount: 10}
@@ -41,15 +39,15 @@ func TestTransactionService_RegisterTransaction(t *testing.T) {
 	}
 }
 
-func TestTransactionService_GetTransactions(t *testing.T) {
-	expected := []domain.Transaction{
+func TestTransactionService_GetTransactions_ReturnsRepositoryResults(t *testing.T) {
+	want := []domain.Transaction{
 		{UserID: 1, Amount: 100},
 		{UserID: 1, Amount: 200},
 	}
 
-	repo := &mockRepo{
+	repo := &mockRepository{
 		getFunc: func() ([]domain.Transaction, error) {
-			return expected, nil
+			return want, nil
 		},
 	}
 	svc := NewTransactionService(repo)
@@ -59,11 +57,10 @@ func TestTransactionService_GetTransactions(t *testing.T) {
 	if err != nil {
 		t.Errorf("GetTransactions() unexpected error = %v", err)
 	}
-	if len(got) != len(expected) {
-		t.Errorf("GetTransactions() got %d items, want %d", len(got), len(expected))
+	if len(got) != len(want) {
+		t.Errorf("GetTransactions() got %d items, want %d", len(got), len(want))
 	}
 
-	// Тест ошибки репозитория
 	repoErr := errors.New("db error")
 	repo.getFunc = func() ([]domain.Transaction, error) {
 		return nil, repoErr

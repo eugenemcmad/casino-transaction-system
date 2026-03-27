@@ -7,7 +7,6 @@ import (
 	"casino-transaction-system/internal/testutil"
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -15,20 +14,20 @@ import (
 	kafkago "github.com/segmentio/kafka-go"
 )
 
-type isolatedMockService struct {
+type mockServiceIntegration struct {
 	processedChan chan domain.Transaction
 }
 
-func (m *isolatedMockService) RegisterTransaction(ctx context.Context, t domain.Transaction) error {
+func (m *mockServiceIntegration) RegisterTransaction(ctx context.Context, t domain.Transaction) error {
 	m.processedChan <- t
 	return nil
 }
 
-func (m *isolatedMockService) GetTransactions(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
+func (m *mockServiceIntegration) GetTransactions(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 	return nil, nil
 }
 
-func TestKafkaConsumer_IsolatedIntegration(t *testing.T) {
+func TestKafkaConsumer_IntegrationFlow(t *testing.T) {
 	// 1. Setup Infrastructure
 	broker, cleanup := testutil.SetupKafka(t)
 	defer cleanup()
@@ -39,7 +38,7 @@ func TestKafkaConsumer_IsolatedIntegration(t *testing.T) {
 	topic := "component-test-" + strconv.FormatInt(time.Now().UnixNano(), 10)
 	testutil.CreateTopicAndWait(t, broker, topic)
 
-	mockSvc := &isolatedMockService{
+	mockSvc := &mockServiceIntegration{
 		processedChan: make(chan domain.Transaction, 1),
 	}
 
@@ -49,11 +48,11 @@ func TestKafkaConsumer_IsolatedIntegration(t *testing.T) {
 		_ = consumer.Start(ctx)
 	}()
 
-	// ⏳ Give consumer time to join group (standard practice for "LastOffset" consumers)
+	// Give consumer time to join group (standard practice for "LastOffset" consumers).
 	time.Sleep(10 * time.Second)
 
 	// 3. Send Message
-	fmt.Println("🚀 Sending test message to Kafka...")
+	t.Log("sending test message to Kafka")
 	writer := &kafkago.Writer{
 		Addr:         kafkago.TCP(broker),
 		Topic:        topic,
@@ -76,10 +75,10 @@ func TestKafkaConsumer_IsolatedIntegration(t *testing.T) {
 	select {
 	case got := <-mockSvc.processedChan:
 		if got.UserID != 555 || got.Amount != 10.50 {
-			t.Errorf("Data mismatch: %+v", got)
+			t.Errorf("data mismatch: %+v", got)
 		}
-		t.Log("✅ Consumer test successful!")
+		t.Log("consumer integration test successful")
 	case <-time.After(20 * time.Second):
-		t.Error("❌ Timeout: consumer failed to process message")
+		t.Error("timeout: consumer failed to process message")
 	}
 }

@@ -23,66 +23,67 @@ func (m *mockService) GetTransactions(ctx context.Context, userID int64, tType *
 	return nil, nil
 }
 
-func TestTransactionHandler_GetTransactions_Detailed(t *testing.T) {
-	tests := []struct {
-		name           string
-		url            string
-		setupMock      func() func(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error)
-		expectedStatus int
+func TestTransactionHandler_GetTransactions_ReturnsExpectedStatusCodes(t *testing.T) {
+	cases := []struct {
+		name       string
+		url        string
+		setupMock  func() func(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error)
+		wantStatus int
 	}{
 		{
-			name: "Success - all params",
+			name: "ok/returns_transactions_for_all_params",
 			url:  "/transactions?user_id=1&transaction_type=bet",
 			setupMock: func() func(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 				return func(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 					return []domain.Transaction{{UserID: 1, Type: "bet", Amount: 10}}, nil
 				}
 			},
-			expectedStatus: http.StatusOK,
+			wantStatus: http.StatusOK,
 		},
 		{
-			name:           "Error - invalid user_id",
-			url:            "/transactions?user_id=abc",
-			expectedStatus: http.StatusBadRequest,
+			name:       "err/invalid_user_id",
+			url:        "/transactions?user_id=abc",
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "Error - invalid transaction_type",
-			url:            "/transactions?transaction_type=invalid",
-			expectedStatus: http.StatusBadRequest,
+			name:       "err/invalid_transaction_type",
+			url:        "/transactions?transaction_type=invalid",
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name: "Error - service failure",
+			name: "err/service_failure",
 			url:  "/transactions",
 			setupMock: func() func(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 				return func(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 					return nil, errors.New("service error")
 				}
 			},
-			expectedStatus: http.StatusInternalServerError,
+			wantStatus: http.StatusInternalServerError,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
 			svc := &mockService{}
-			if tt.setupMock != nil {
-				svc.getTransactionsFunc = tt.setupMock()
+			if tc.setupMock != nil {
+				svc.getTransactionsFunc = tc.setupMock()
 			}
 			h := NewTransactionHandler(svc)
 
-			req := httptest.NewRequest(http.MethodGet, tt.url, nil)
+			req := httptest.NewRequest(http.MethodGet, tc.url, nil)
 			w := httptest.NewRecorder()
 
 			h.GetTransactions(w, req)
 
-			if w.Code != tt.expectedStatus {
-				t.Errorf("GetTransactions() status = %v, want %v", w.Code, tt.expectedStatus)
+			if w.Code != tc.wantStatus {
+				t.Errorf("GetTransactions() status = %v, want %v", w.Code, tc.wantStatus)
 			}
 		})
 	}
 }
 
-func TestNewTransactionResponse(t *testing.T) {
+func TestNewTransactionResponse_MapsDomainFields(t *testing.T) {
 	domainTx := domain.Transaction{
 		UserID: 1,
 		Type:   "bet",

@@ -5,7 +5,6 @@ package testutil
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 	"time"
 
@@ -19,9 +18,14 @@ import (
 // Returns connection string and a cleanup function.
 func SetupPostgres(t *testing.T) (string, func()) {
 	t.Helper()
+	defer func() {
+		if r := recover(); r != nil {
+			t.Skipf("skipping postgres testcontainer setup (docker unavailable): %v", r)
+		}
+	}()
 	ctx := context.Background()
 
-	fmt.Println("🐳 Spinning up temporary PostgreSQL container...")
+	t.Log("spinning up temporary PostgreSQL container")
 	pgContainer, err := postgres.RunContainer(ctx,
 		testcontainers.WithImage("postgres:15-alpine"),
 		postgres.WithDatabase("testdb"),
@@ -33,7 +37,7 @@ func SetupPostgres(t *testing.T) (string, func()) {
 				WithStartupTimeout(2*time.Minute)),
 	)
 	if err != nil {
-		t.Fatalf("failed to start postgres: %v", err)
+		t.Skipf("skipping postgres testcontainer setup (docker unavailable): %v", err)
 	}
 
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
@@ -63,7 +67,7 @@ func SetupPostgres(t *testing.T) (string, func()) {
 		t.Fatalf("failed to setup schema: %v", err)
 	}
 
-	fmt.Println("✅ PostgreSQL container is ready and schema applied.")
+	t.Log("PostgreSQL container is ready and schema applied")
 
 	return connStr, func() {
 		pgContainer.Terminate(ctx)

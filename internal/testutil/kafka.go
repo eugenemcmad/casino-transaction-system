@@ -4,7 +4,6 @@ package testutil
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"strconv"
 	"testing"
@@ -19,6 +18,11 @@ import (
 // It uses a dynamic port mapping strategy to solve the 'advertised listeners' problem on Windows.
 func SetupKafka(t *testing.T) (string, func()) {
 	t.Helper()
+	defer func() {
+		if r := recover(); r != nil {
+			t.Skipf("skipping kafka testcontainer setup (docker unavailable): %v", r)
+		}
+	}()
 	ctx := context.Background()
 
 	// 1. Find a free port on the host to map 1:1 with the container.
@@ -35,7 +39,7 @@ func SetupKafka(t *testing.T) (string, func()) {
 	l.Close()
 	portStr := strconv.Itoa(freePort)
 
-	fmt.Printf("🚀 Starting Bitnami Kafka KRaft on host port %s...\n", portStr)
+	t.Logf("starting Bitnami Kafka KRaft on host port %s", portStr)
 
 	req := testcontainers.ContainerRequest{
 		Image: "public.ecr.aws/bitnami/kafka:3.4",
@@ -60,11 +64,11 @@ func SetupKafka(t *testing.T) (string, func()) {
 		Started:          true,
 	})
 	if err != nil {
-		t.Fatalf("failed to start Kafka: %v", err)
+		t.Skipf("skipping kafka testcontainer setup (docker unavailable): %v", err)
 	}
 
 	broker := "localhost:" + portStr
-	fmt.Printf("✅ Test Kafka is ready at %s\n", broker)
+	t.Logf("test Kafka is ready at %s", broker)
 
 	return broker, func() {
 		kafkaContainer.Terminate(ctx)
@@ -101,7 +105,7 @@ func CreateTopicAndWait(t *testing.T, broker, topic string) {
 		case <-ticker.C:
 			partitions, err := conn.ReadPartitions(topic)
 			if err == nil && len(partitions) > 0 {
-				fmt.Printf("✅ Metadata synchronized for topic: %s\n", topic)
+				t.Logf("metadata synchronized for topic: %s", topic)
 				return
 			}
 		}

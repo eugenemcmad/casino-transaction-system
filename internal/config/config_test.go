@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestNewConfig(t *testing.T) {
+func TestNewConfig_LoadsFromEnv(t *testing.T) {
 	// 1. Setup mock ENV variables
 	os.Setenv("APP_NAME", "test-app")
 	os.Setenv("APP_VERSION", "1.0.0")
@@ -39,7 +39,7 @@ func TestNewConfig(t *testing.T) {
 	}
 }
 
-func TestNewConfig_Validation(t *testing.T) {
+func TestNewConfig_ReturnsErrorWhenMandatoryFieldMissing(t *testing.T) {
 	// Clear ENV
 	os.Unsetenv("APP_NAME")
 	ResetConfig()
