@@ -30,6 +30,14 @@ Accept: application/json
 GET {{host}}/transactions?user_id=invalid
 Accept: application/json
 
+### Non-positive User ID: zero (Should return 400)
+GET {{host}}/transactions?user_id=0
+Accept: application/json
+
+### Non-positive User ID: negative (Should return 400)
+GET {{host}}/transactions?user_id=-1
+Accept: application/json
+
 ### Invalid Transaction Type in filter (Should return 400)
 GET {{host}}/transactions?transaction_type=bonus
 Accept: application/json

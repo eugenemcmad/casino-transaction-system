@@ -34,6 +34,11 @@ func (h *TransactionHandler) GetTransactions(w http.ResponseWriter, r *http.Requ
 			http.Error(w, MsgInvalidUserID, http.StatusBadRequest)
 			return
 		}
+		if userID <= 0 {
+			slog.Warn(MsgInvalidUserID, "userID", userID)
+			http.Error(w, MsgInvalidUserID, http.StatusBadRequest)
+			return
+		}
 	}
 
 	var tType *domain.TransactionType

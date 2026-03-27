@@ -46,6 +46,16 @@ func TestTransactionHandler_GetTransactions_ReturnsExpectedStatusCodes(t *testin
 			wantStatus: http.StatusBadRequest,
 		},
 		{
+			name:       "err/non_positive_user_id_zero",
+			url:        "/transactions?user_id=0",
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "err/non_positive_user_id_negative",
+			url:        "/transactions?user_id=-1",
+			wantStatus: http.StatusBadRequest,
+		},
+		{
 			name:       "err/invalid_transaction_type",
 			url:        "/transactions?transaction_type=invalid",
 			wantStatus: http.StatusBadRequest,

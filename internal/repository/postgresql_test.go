@@ -28,6 +28,9 @@ func TestNewPostgresRepo(t *testing.T) {
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("NewPostgresRepo() error = %v, wantErr %v", err, tc.wantErr)
 			}
+			if tc.wantErr && !errors.Is(err, ErrDBUnavailable) {
+				t.Fatalf("NewPostgresRepo() expected ErrDBUnavailable, got %v", err)
+			}
 			if repo != nil {
 				repo.Close()
 			}
@@ -196,8 +199,8 @@ func TestPostgresRepo_Save_ReturnsErrorForUninitializedRepo(t *testing.T) {
 	tx := domain.Transaction{UserID: 1, Type: domain.TransactionTypeBet, Amount: 10}
 
 	err := repo.Save(context.Background(), tx)
-	if err == nil {
-		t.Fatal("Save() expected error for uninitialized repository, got nil")
+	if !errors.Is(err, ErrRepoNotInitialized) {
+		t.Fatalf("Save() error = %v, want %v", err, ErrRepoNotInitialized)
 	}
 }
 
@@ -205,7 +208,7 @@ func TestPostgresRepo_Get_ReturnsErrorForUninitializedRepo(t *testing.T) {
 	repo := &PostgresRepo{}
 
 	_, err := repo.Get(context.Background(), 1, nil)
-	if err == nil {
-		t.Fatal("Get() expected error for uninitialized repository, got nil")
+	if !errors.Is(err, ErrRepoNotInitialized) {
+		t.Fatalf("Get() error = %v, want %v", err, ErrRepoNotInitialized)
 	}
 }

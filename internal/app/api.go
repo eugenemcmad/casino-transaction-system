@@ -2,59 +2,53 @@ package app
 
 import (
 	"casino-transaction-system/internal/config"
-	"casino-transaction-system/internal/repository"
-	"casino-transaction-system/internal/service"
-	transport "casino-transaction-system/internal/transport/http"
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 )
 
+type resourceCloser interface {
+	Close()
+}
+
 type ApiApp struct {
 	cfg    *config.Config
 	server *http.Server
-	repo   *repository.PostgresRepo
+	closer resourceCloser
 }
 
-func NewApiApp(cfg *config.Config) (*ApiApp, error) {
-	// 1. Data Layer
-	repo, err := repository.NewPostgresRepo(cfg.Postgres.URL)
-	if err != nil {
-		return nil, fmt.Errorf("initialize postgres repository: %w", err)
-	}
-
-	// 2. Service Layer (Business Logic)
-	svc := service.NewTransactionService(repo)
-
-	// 3. Transport Layer (HTTP)
-	handler := transport.NewTransactionHandler(svc)
-	router := transport.NewRouter(handler)
-
-	server := &http.Server{
-		Addr:    ":" + cfg.HTTP.Port,
-		Handler: router,
-	}
-
+func NewApiApp(cfg *config.Config, server *http.Server, closer resourceCloser) *ApiApp {
 	slog.Info(MsgAPIInitialized)
 
 	return &ApiApp{
 		cfg:    cfg,
 		server: server,
-		repo:   repo,
-	}, nil
+		closer: closer,
+	}
 }
 
 func (a *ApiApp) Run(ctx context.Context) error {
 	slog.Info(MsgStartingAPI, "port", a.cfg.HTTP.Port)
 
+	serverErrCh := make(chan error, 1)
 	go func() {
-		if err := a.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error(MsgHTTPServerError, "err", err)
+		if err := a.server.ListenAndServe(); err != nil {
+			serverErrCh <- err
 		}
 	}()
 
-	<-ctx.Done()
+	select {
+	case <-ctx.Done():
+	case err := <-serverErrCh:
+		if err != nil && err != http.ErrServerClosed {
+			slog.Error(MsgHTTPServerError, "err", err)
+			if a.closer != nil {
+				slog.Info(MsgClosingDBConnection)
+				a.closer.Close()
+			}
+			return err
+		}
+	}
 
 	slog.Info(MsgShuttingDownAPI)
 
@@ -65,9 +59,9 @@ func (a *ApiApp) Run(ctx context.Context) error {
 		slog.Error(MsgHTTPServerShutdown, "err", err)
 	}
 
-	if a.repo != nil {
+	if a.closer != nil {
 		slog.Info(MsgClosingDBConnection)
-		a.repo.Close()
+		a.closer.Close()
 	}
 
 	return nil

@@ -72,7 +72,9 @@ http:
 logger:
   log_level: info
 postgres:
-  pool_max: 2
+  pool_max_open: 2
+  pool_max_idle: 1
+  conn_max_lifetime_minutes: 3
   url: postgres://file:file@localhost:5432/filedb
 kafka:
   brokers:
@@ -104,5 +106,30 @@ kafka:
 	}
 	if cfg.Kafka.GroupID != "env-group" {
 		t.Fatalf("cfg.Kafka.GroupID = %q, want %q", cfg.Kafka.GroupID, "env-group")
+	}
+}
+
+func TestNewConfig_CanRetryAfterInitialError(t *testing.T) {
+	ResetConfig()
+	os.Unsetenv("APP_NAME")
+	t.Setenv("APP_VERSION", "1.0.0")
+	t.Setenv("PG_URL", "postgres://user:pass@localhost:5432/db")
+	t.Setenv("KAFKA_BROKERS", "localhost:9092")
+	t.Setenv("KAFKA_TOPIC", "test-topic")
+	t.Setenv("CONFIG_PATH", "")
+
+	if _, err := NewConfig(); err == nil {
+		t.Fatal("NewConfig() expected initial error, got nil")
+	}
+
+	t.Setenv("APP_NAME", "retry-app")
+	ResetConfig()
+
+	cfg, err := NewConfig()
+	if err != nil {
+		t.Fatalf("NewConfig() retry error = %v", err)
+	}
+	if cfg.App.Name != "retry-app" {
+		t.Fatalf("cfg.App.Name = %q, want %q", cfg.App.Name, "retry-app")
 	}
 }

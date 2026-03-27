@@ -1,11 +1,10 @@
 package main
 
 import (
-	"casino-transaction-system/internal/app"
+	"casino-transaction-system/internal/bootstrap"
 	"casino-transaction-system/internal/config"
 	"casino-transaction-system/pkg/logger"
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -16,7 +15,7 @@ func main() {
 
 	cfg, err := config.NewConfig()
 	if err != nil {
-		fmt.Println(err) // exit 1
+		slog.Error("Failed to load config", "error", err)
 		os.Exit(1)
 	}
 
@@ -27,7 +26,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	apiApp, err := app.NewApiApp(cfg)
+	apiApp, err := bootstrap.NewApiApp(cfg)
 	if err != nil {
 		slog.Error("Failed to init apiApp", slog.Any("error", err))
 		os.Exit(1)

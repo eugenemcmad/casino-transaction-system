@@ -2,7 +2,6 @@ package app
 
 import (
 	"casino-transaction-system/internal/config"
-	"casino-transaction-system/internal/repository"
 	"casino-transaction-system/internal/service"
 	transport "casino-transaction-system/internal/transport/kafka"
 	"context"
@@ -19,7 +18,7 @@ func TestProcessorApp_Run_CanceledContext(t *testing.T) {
 	app := &ProcessorApp{
 		cfg:      cfg,
 		consumer: consumer,
-		repo:     &repository.PostgresRepo{},
+		closer:   noopCloser{},
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

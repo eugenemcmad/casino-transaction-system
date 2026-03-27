@@ -4,7 +4,6 @@ import (
 	"casino-transaction-system/internal/domain"
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -17,25 +16,50 @@ type PostgresRepo struct {
 	db *sql.DB
 }
 
+type PoolConfig struct {
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime time.Duration
+}
+
+var DefaultPoolConfig = PoolConfig{
+	MaxOpenConns:    25,
+	MaxIdleConns:    5,
+	ConnMaxLifetime: 5 * time.Minute,
+}
+
 // NewPostgresRepo initializes DB and validates connectivity.
 // It fails fast if database initialization is not possible.
 func NewPostgresRepo(url string) (*PostgresRepo, error) {
+	return NewPostgresRepoWithPool(url, DefaultPoolConfig)
+}
+
+func NewPostgresRepoWithPool(url string, poolCfg PoolConfig) (*PostgresRepo, error) {
 	slog.Debug(MsgInitializingPostgres, "url", url)
 	db, err := sql.Open(DriverPostgres, url)
 	if err != nil {
 		slog.Error(MsgErrorOpeningDB, "error", err)
-		return nil, fmt.Errorf("open postgres connection: %w", err)
+		return nil, fmt.Errorf("%w: open postgres connection: %v", ErrDBUnavailable, err)
 	}
 
-	// Pool configuration: production-ready settings
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	if poolCfg.MaxOpenConns <= 0 {
+		poolCfg.MaxOpenConns = DefaultPoolConfig.MaxOpenConns
+	}
+	if poolCfg.MaxIdleConns <= 0 {
+		poolCfg.MaxIdleConns = DefaultPoolConfig.MaxIdleConns
+	}
+	if poolCfg.ConnMaxLifetime <= 0 {
+		poolCfg.ConnMaxLifetime = DefaultPoolConfig.ConnMaxLifetime
+	}
+
+	db.SetMaxOpenConns(poolCfg.MaxOpenConns)
+	db.SetMaxIdleConns(poolCfg.MaxIdleConns)
+	db.SetConnMaxLifetime(poolCfg.ConnMaxLifetime)
 
 	if err := db.Ping(); err != nil {
 		slog.Error(MsgDBPingFailed, "error", err)
 		_ = db.Close()
-		return nil, fmt.Errorf("ping postgres: %w", err)
+		return nil, fmt.Errorf("%w: ping postgres: %v", ErrDBUnavailable, err)
 	}
 	slog.Debug(MsgDBConnectionSuccess)
 
@@ -44,7 +68,7 @@ func NewPostgresRepo(url string) (*PostgresRepo, error) {
 
 func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 	if r == nil || r.db == nil {
-		return errors.New("postgres repository is not initialized")
+		return ErrRepoNotInitialized
 	}
 	slog.Debug(MsgSavingToDB, "userID", t.UserID, "type", t.Type, "amount", t.Amount)
 
@@ -72,7 +96,7 @@ func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 // Get fetches transactions based on optional filters.
 func (r *PostgresRepo) Get(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 	if r == nil || r.db == nil {
-		return nil, errors.New("postgres repository is not initialized")
+		return nil, ErrRepoNotInitialized
 	}
 	slog.Debug(MsgFetchingFromDB, "userID", userID, "type", tType)
 

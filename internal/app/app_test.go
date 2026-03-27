@@ -8,14 +8,24 @@ import (
 	"time"
 )
 
-func TestNewApiApp_CreatesInstance(t *testing.T) {
-	cfg := &config.Config{}
-	cfg.HTTP.Port = "8084" // Unique port
-	cfg.Postgres.URL = "postgres://localhost:1/db?sslmode=disable"
+type noopCloser struct{}
 
-	_, err := NewApiApp(cfg)
-	if err == nil {
-		t.Fatal("NewApiApp() expected error for unreachable database, got nil")
+func (noopCloser) Close() {}
+
+type noopConsumer struct{}
+
+func (noopConsumer) Start(ctx context.Context) error { return nil }
+
+func TestNewApiApp_CreatesInstance(t *testing.T) {
+	cfg := &config.Config{HTTP: config.HTTP{Port: "8084"}}
+	server := &http.Server{
+		Addr:    ":8084",
+		Handler: http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}),
+	}
+
+	app := NewApiApp(cfg, server, noopCloser{})
+	if app == nil {
+		t.Fatal("NewApiApp() returned nil")
 	}
 }
 
@@ -39,13 +49,12 @@ func TestApiApp_Run_Shutdown(t *testing.T) {
 
 func TestNewProcessorApp_CreatesInstance(t *testing.T) {
 	cfg := &config.Config{}
-	cfg.Postgres.URL = "postgres://localhost:1/db?sslmode=disable"
 	cfg.Kafka.Brokers = []string{"localhost:9092"}
 	cfg.Kafka.Topic = "test"
 	cfg.Kafka.GroupID = "test-group"
 
-	_, err := NewProcessorApp(cfg)
-	if err == nil {
-		t.Fatal("NewProcessorApp() expected error for unreachable database, got nil")
+	app := NewProcessorApp(cfg, noopConsumer{}, noopCloser{})
+	if app == nil {
+		t.Fatal("NewProcessorApp() returned nil")
 	}
 }

@@ -77,7 +77,7 @@ func (c *Consumer) Start(ctx context.Context) error {
 			slog.Warn(MsgMissingZeroTimestamp, "userID", dto.UserID, "offset", msg.Offset)
 		}
 
-		processCtx, cancel := context.WithTimeout(context.Background(), ProcessTransactionTimeout)
+		processCtx, cancel := context.WithTimeout(ctx, ProcessTransactionTimeout)
 
 		err = c.svc.RegisterTransaction(processCtx, t)
 		cancel()

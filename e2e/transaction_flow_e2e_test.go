@@ -3,7 +3,7 @@
 package e2e
 
 import (
-	"casino-transaction-system/internal/app"
+	"casino-transaction-system/internal/bootstrap"
 	"casino-transaction-system/internal/config"
 	"casino-transaction-system/internal/domain"
 	"casino-transaction-system/internal/testutil"
@@ -55,11 +55,11 @@ func TestTransactionFlow_EndToEnd(t *testing.T) {
 	config.ResetConfig()
 
 	// 3. Start System Components
-	apiApp, err := app.NewApiApp(cfg)
+	apiApp, err := bootstrap.NewApiApp(cfg)
 	if err != nil {
 		t.Fatalf("failed to initialize api app: %v", err)
 	}
-	processorApp, err := app.NewProcessorApp(cfg)
+	processorApp, err := bootstrap.NewProcessorApp(cfg)
 	if err != nil {
 		t.Fatalf("failed to initialize processor app: %v", err)
 	}
