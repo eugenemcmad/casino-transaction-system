@@ -78,7 +78,6 @@ func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 		ts.Valid = true
 	}
 
-	// Idempotency: using business-key (user_id, type, amount, timestamp)
 	query := `
 		INSERT INTO transactions (user_id, type, amount, timestamp)
 		VALUES ($1, $2, $3, $4)
@@ -130,14 +129,16 @@ func (r *PostgresRepo) Get(ctx context.Context, userID int64, tType *domain.Tran
 	for rows.Next() {
 		var t domain.Transaction
 		var tTypeStr string
+		var amount int64
 		var ts sql.NullTime
 
-		if err := rows.Scan(&t.UserID, &tTypeStr, &t.Amount, &ts, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.UserID, &tTypeStr, &amount, &ts, &t.CreatedAt); err != nil {
 			slog.Error(MsgFailedToScanRow, "error", err)
 			return nil, err
 		}
 
 		t.Type = domain.TransactionType(tTypeStr)
+		t.Amount = amount
 		if ts.Valid {
 			t.Timestamp = ts.Time
 		}

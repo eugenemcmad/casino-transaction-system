@@ -22,13 +22,13 @@ func TestTransactionDTO_ToDomain(t *testing.T) {
 			dto: TransactionDTO{
 				UserID:    1,
 				Type:      "bet",
-				Amount:    10.5,
+				Amount:    "1050",
 				Timestamp: "2023-10-27T15:00:00Z",
 			},
 			want: domain.Transaction{
 				UserID: 1,
 				Type:   "bet",
-				Amount: 10.5,
+				Amount: 1050,
 			},
 		},
 		{
@@ -36,7 +36,7 @@ func TestTransactionDTO_ToDomain(t *testing.T) {
 			dto: TransactionDTO{
 				UserID:    1,
 				Type:      "win",
-				Amount:    100,
+				Amount:    "100",
 				Timestamp: "invalid-date",
 			},
 			want: domain.Transaction{
@@ -50,7 +50,10 @@ func TestTransactionDTO_ToDomain(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			got := tc.dto.ToDomain()
+			got, err := tc.dto.ToDomain()
+			if err != nil {
+				t.Fatalf("ToDomain() error = %v", err)
+			}
 			if got.UserID != tc.want.UserID || got.Type != tc.want.Type || got.Amount != tc.want.Amount {
 				t.Errorf("ToDomain() = %+v, want %+v", got, tc.want)
 			}
@@ -143,13 +146,13 @@ func TestConsumerStart_ProcessesMessagesAndHandlesErrors(t *testing.T) {
 		{
 			name: "ok/valid_message_calls_service",
 			messages: []kafkago.Message{
-				{Value: []byte(`{"user_id":11,"transaction_type":"bet","amount":12.5,"timestamp":"2026-03-27T10:00:00Z"}`)},
+				{Value: []byte(`{"user_id":11,"transaction_type":"bet","amount":1250,"timestamp":"2026-03-27T10:00:00Z"}`)},
 			},
 			wantCalls: 1,
 			wantTx: &domain.Transaction{
 				UserID: 11,
 				Type:   domain.TransactionTypeBet,
-				Amount: 12.5,
+				Amount: 1250,
 			},
 		},
 		{
@@ -163,7 +166,7 @@ func TestConsumerStart_ProcessesMessagesAndHandlesErrors(t *testing.T) {
 		{
 			name: "err/service_error_is_handled_and_loop_continues",
 			messages: []kafkago.Message{
-				{Value: []byte(`{"user_id":22,"transaction_type":"win","amount":45.0,"timestamp":"2026-03-27T10:00:00Z"}`)},
+				{Value: []byte(`{"user_id":22,"transaction_type":"win","amount":4500,"timestamp":"2026-03-27T10:00:00Z"}`)},
 			},
 			serviceErr: dbDownErr,
 			wantCalls:  1,

@@ -57,7 +57,7 @@ func SetupPostgres(t *testing.T) (string, func()) {
 			id BIGSERIAL PRIMARY KEY,
 			user_id BIGINT NOT NULL,
 			type VARCHAR(10) NOT NULL,
-			amount NUMERIC(15, 2) NOT NULL,
+			amount BIGINT NOT NULL,
 			timestamp TIMESTAMP WITH TIME ZONE,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			UNIQUE NULLS NOT DISTINCT (user_id, type, amount, timestamp)

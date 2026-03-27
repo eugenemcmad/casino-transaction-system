@@ -10,7 +10,7 @@ type Transaction struct {
 	ID        int64
 	UserID    int64
 	Type      TransactionType
-	Amount    float64
+	Amount    int64
 	Timestamp time.Time
 	CreatedAt time.Time
 }

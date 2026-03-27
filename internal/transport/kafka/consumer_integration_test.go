@@ -63,7 +63,7 @@ func TestKafkaConsumer_IntegrationFlow(t *testing.T) {
 	testTx := TransactionDTO{
 		UserID:    555,
 		Type:      domain.TransactionTypeBet,
-		Amount:    10.50,
+		Amount:    "1050",
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
 	payload, _ := json.Marshal(testTx)
@@ -74,7 +74,7 @@ func TestKafkaConsumer_IntegrationFlow(t *testing.T) {
 	// 4. Assert
 	select {
 	case got := <-mockSvc.processedChan:
-		if got.UserID != 555 || got.Amount != 10.50 {
+		if got.UserID != 555 || got.Amount != 1050 {
 			t.Errorf("data mismatch: %+v", got)
 		}
 		t.Log("consumer integration test successful")

@@ -13,7 +13,7 @@ func TestTransaction_Validate(t *testing.T) {
 	}{
 		{
 			name: "ok/valid_bet",
-			tx:   Transaction{UserID: 1, Type: TransactionTypeBet, Amount: 10.5},
+			tx:   Transaction{UserID: 1, Type: TransactionTypeBet, Amount: 1050},
 		},
 		{
 			name: "ok/valid_win",

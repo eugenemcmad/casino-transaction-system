@@ -50,7 +50,7 @@ func TestPostgresRepo_Save(t *testing.T) {
 		tx := domain.Transaction{
 			UserID:    10,
 			Type:      domain.TransactionTypeBet,
-			Amount:    15.5,
+			Amount:    1550,
 			Timestamp: time.Now().UTC(),
 		}
 
@@ -78,7 +78,7 @@ func TestPostgresRepo_Save(t *testing.T) {
 		tx := domain.Transaction{
 			UserID: 1,
 			Type:   domain.TransactionTypeWin,
-			Amount: 1.25,
+			Amount: 125,
 		}
 
 		mock.ExpectExec("INSERT INTO transactions").
@@ -107,8 +107,8 @@ func TestPostgresRepo_Get(t *testing.T) {
 
 		now := time.Now().UTC()
 		rows := sqlmock.NewRows([]string{"user_id", "type", "amount", "timestamp", "created_at"}).
-			AddRow(int64(7), "bet", 13.7, now, now).
-			AddRow(int64(7), "win", 20.0, nil, now)
+			AddRow(int64(7), "bet", int64(1370), now, now).
+			AddRow(int64(7), "win", int64(2000), nil, now)
 
 		mock.ExpectQuery(expectedQuery).
 			WithArgs(int64(7), "bet").
@@ -161,7 +161,7 @@ func TestPostgresRepo_Get(t *testing.T) {
 		repo := &PostgresRepo{db: db}
 		expectedQuery := QueryGetTransactionsBase + QueryOrderByTimestampDesc
 		rows := sqlmock.NewRows([]string{"user_id", "type", "amount", "timestamp", "created_at"}).
-			AddRow("bad-user-id", "bet", 10.0, time.Now().UTC(), time.Now().UTC())
+			AddRow("bad-user-id", "bet", int64(1000), time.Now().UTC(), time.Now().UTC())
 
 		mock.ExpectQuery(expectedQuery).WillReturnRows(rows)
 

@@ -29,7 +29,7 @@ func TestPostgresRepo_IntegrationFlow(t *testing.T) {
 		tr := domain.Transaction{
 			UserID:    12345,
 			Type:      domain.TransactionTypeBet,
-			Amount:    99.99,
+			Amount:    9999,
 			Timestamp: time.Now().UTC().Truncate(time.Microsecond),
 		}
 
@@ -52,15 +52,15 @@ func TestPostgresRepo_IntegrationFlow(t *testing.T) {
 
 	t.Run("ok/get_sorts_by_timestamp_desc", func(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Second)
-		_ = repo.Save(ctx, domain.Transaction{UserID: 1, Type: "bet", Amount: 10, Timestamp: now.Add(-time.Hour)})
-		_ = repo.Save(ctx, domain.Transaction{UserID: 1, Type: "win", Amount: 20, Timestamp: now})
+		_ = repo.Save(ctx, domain.Transaction{UserID: 1, Type: "bet", Amount: 1000, Timestamp: now.Add(-time.Hour)})
+		_ = repo.Save(ctx, domain.Transaction{UserID: 1, Type: "win", Amount: 2000, Timestamp: now})
 
 		// Test retrieval and sorting (Default is DESC)
 		res, _ := repo.Get(ctx, 1, nil)
 		if len(res) != 2 {
 			t.Errorf("expected 2 records, got %d", len(res))
 		}
-		if res[0].Amount != 20 {
+		if res[0].Amount != 2000 {
 			t.Error("sorting check failed: latest transaction should be first")
 		}
 	})

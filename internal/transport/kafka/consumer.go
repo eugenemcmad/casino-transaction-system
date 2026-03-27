@@ -60,7 +60,16 @@ func (c *Consumer) Start(ctx context.Context) error {
 			continue
 		}
 
-		t := dto.ToDomain()
+		t, err := dto.ToDomain()
+		if err != nil {
+			slog.Warn("Kafka transaction amount parse failed",
+				"error", err,
+				"dto", dto,
+				"raw_payload", string(msg.Value),
+				"offset", msg.Offset,
+			)
+			continue
+		}
 
 		if err := t.Validate(); err != nil {
 			slog.Warn("Kafka transaction validation failed (REJECTED)",

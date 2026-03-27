@@ -76,7 +76,7 @@ func TestTransactionFlow_EndToEnd(t *testing.T) {
 
 	// 4. Act: Seed message to Kafka
 	testUserID := int64(123456789)
-	testAmount := 123.45
+	testAmount := int64(12345)
 
 	t.Log("seeding transaction message to Kafka")
 	writer := &kafkago.Writer{Addr: kafkago.TCP(broker), Topic: topic, RequiredAcks: kafkago.RequireAll}
@@ -85,7 +85,7 @@ func TestTransactionFlow_EndToEnd(t *testing.T) {
 	testTx := kafka.TransactionDTO{
 		UserID:    testUserID,
 		Type:      domain.TransactionTypeWin,
-		Amount:    testAmount,
+		Amount:    strconv.FormatInt(testAmount, 10),
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}
 	payload, _ := json.Marshal(testTx)
@@ -122,7 +122,7 @@ func TestTransactionFlow_EndToEnd(t *testing.T) {
 	// 6. Data Validation
 	got := transactions[0]
 	if got.UserID != testUserID || got.Amount != testAmount {
-		t.Errorf("data mismatch: expected userID %d and amount %v, got %+v", testUserID, testAmount, got)
+		t.Errorf("data mismatch: expected userID %d and amount %d, got %+v", testUserID, testAmount, got)
 	}
 	t.Log("e2e transaction flow verified successfully")
 }

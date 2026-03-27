@@ -97,10 +97,10 @@ func TestNewTransactionResponse_MapsDomainFields(t *testing.T) {
 	domainTx := domain.Transaction{
 		UserID: 1,
 		Type:   "bet",
-		Amount: 10.5,
+		Amount: 1050,
 	}
 	resp := NewTransactionResponse(domainTx)
-	if resp.UserID != 1 || resp.Amount != 10.5 || resp.TransactionType != "bet" {
+	if resp.UserID != 1 || resp.Amount != 1050 || resp.TransactionType != "bet" {
 		t.Errorf("Mapping failed: %+v", resp)
 	}
 }
