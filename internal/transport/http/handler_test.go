@@ -128,7 +128,7 @@ func TestNewTransactionResponse_MapsDomainFields(t *testing.T) {
 	}
 }
 
-func TestTransactionHandler_GetTransactions_ResponseContract(t *testing.T) {
+func TestTransactionHandler_GetTransactions_JSONContract(t *testing.T) {
 	svc := &mockService{
 		getTransactionsFunc: func(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 			return []domain.Transaction{

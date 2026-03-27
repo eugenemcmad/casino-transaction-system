@@ -62,10 +62,10 @@ func TestCreateTransactionRequest_ToDomain(t *testing.T) {
 
 func TestCreateTransactionRequest_UnmarshalJSON(t *testing.T) {
 	cases := []struct {
-		name      string
-		payload   string
-		want      CreateTransactionRequest
-		wantError bool
+		name    string
+		payload string
+		want    CreateTransactionRequest
+		wantErr bool
 	}{
 		{
 			name:    "ok/amount_as_string",
@@ -88,9 +88,9 @@ func TestCreateTransactionRequest_UnmarshalJSON(t *testing.T) {
 			},
 		},
 		{
-			name:      "err/missing_amount",
-			payload:   `{"user_id":3,"transaction_type":"win","timestamp":"2026-03-27T10:20:30Z"}`,
-			wantError: true,
+			name:    "err/missing_amount",
+			payload: `{"user_id":3,"transaction_type":"win","timestamp":"2026-03-27T10:20:30Z"}`,
+			wantErr: true,
 		},
 	}
 
@@ -99,10 +99,10 @@ func TestCreateTransactionRequest_UnmarshalJSON(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var got CreateTransactionRequest
 			err := json.Unmarshal([]byte(tc.payload), &got)
-			if (err != nil) != tc.wantError {
-				t.Fatalf("Unmarshal() error = %v, wantError %v", err, tc.wantError)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("Unmarshal() error = %v, wantErr %v", err, tc.wantErr)
 			}
-			if tc.wantError {
+			if tc.wantErr {
 				return
 			}
 

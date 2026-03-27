@@ -200,7 +200,7 @@ func TestPostgresRepo_Save_ReturnsErrorForUninitializedRepo(t *testing.T) {
 
 	err := repo.Save(context.Background(), tx)
 	if !errors.Is(err, ErrRepoNotInitialized) {
-		t.Fatalf("Save() error = %v, want %v", err, ErrRepoNotInitialized)
+		t.Fatalf("Save() error = %v, wantErr %v", err, ErrRepoNotInitialized)
 	}
 }
 
@@ -209,6 +209,6 @@ func TestPostgresRepo_Get_ReturnsErrorForUninitializedRepo(t *testing.T) {
 
 	_, err := repo.Get(context.Background(), 1, nil)
 	if !errors.Is(err, ErrRepoNotInitialized) {
-		t.Fatalf("Get() error = %v, want %v", err, ErrRepoNotInitialized)
+		t.Fatalf("Get() error = %v, wantErr %v", err, ErrRepoNotInitialized)
 	}
 }

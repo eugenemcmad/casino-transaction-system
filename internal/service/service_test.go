@@ -89,7 +89,7 @@ func TestTransactionService_GetTransactions_ReturnsRepositoryResults(t *testing.
 
 			got, err := svc.GetTransactions(context.Background(), 1, nil)
 			if !errors.Is(err, tc.wantErr) {
-				t.Fatalf("GetTransactions() error = %v, want %v", err, tc.wantErr)
+				t.Fatalf("GetTransactions() error = %v, wantErr %v", err, tc.wantErr)
 			}
 			if len(got) != tc.wantLen {
 				t.Fatalf("GetTransactions() len = %d, want %d", len(got), tc.wantLen)

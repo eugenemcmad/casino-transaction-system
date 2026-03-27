@@ -71,7 +71,7 @@ func TestNewProcessorApp_CreatesInstance(t *testing.T) {
 	}
 }
 
-func TestApiApp_closeResources_ClosesOnlyOnce(t *testing.T) {
+func TestApiApp_CloseResources_Once(t *testing.T) {
 	closer := &countingCloser{}
 	app := &ApiApp{closer: closer}
 

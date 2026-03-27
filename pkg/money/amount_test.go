@@ -36,7 +36,7 @@ func TestParseToMinorUnits(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := ParseToMinorUnits(tc.input)
 			if !errors.Is(err, tc.wantErr) {
-				t.Fatalf("ParseToMinorUnits() error = %v, want %v", err, tc.wantErr)
+				t.Fatalf("ParseToMinorUnits() error = %v, wantErr %v", err, tc.wantErr)
 			}
 			if got != tc.want {
 				t.Fatalf("ParseToMinorUnits() = %d, want %d", got, tc.want)
