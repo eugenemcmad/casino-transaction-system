@@ -9,12 +9,13 @@ import (
 
 type mockRepository struct {
 	saveCalled bool
+	saveErr    error
 	getFunc    func() ([]domain.Transaction, error)
 }
 
 func (m *mockRepository) Save(ctx context.Context, t domain.Transaction) error {
 	m.saveCalled = true
-	return nil
+	return m.saveErr
 }
 
 func (m *mockRepository) Get(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
@@ -25,49 +26,74 @@ func (m *mockRepository) Get(ctx context.Context, userID int64, tType *domain.Tr
 }
 
 func TestTransactionService_RegisterTransaction_CallsRepositorySave(t *testing.T) {
-	repo := &mockRepository{}
-	svc := NewTransactionService(repo)
-
-	tr := domain.Transaction{UserID: 1, Type: domain.TransactionTypeBet, Amount: 10}
-	err := svc.RegisterTransaction(context.Background(), tr)
-
-	if err != nil {
-		t.Errorf("RegisterTransaction() unexpected error = %v", err)
+	cases := []struct {
+		name    string
+		saveErr error
+		wantErr bool
+	}{
+		{name: "ok/calls_repository_save", saveErr: nil, wantErr: false},
+		{name: "err/returns_repository_error", saveErr: errors.New("save failed"), wantErr: true},
 	}
-	if !repo.saveCalled {
-		t.Error("RegisterTransaction() did not call repository Save")
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			repo := &mockRepository{saveErr: tc.saveErr}
+			svc := NewTransactionService(repo)
+			tx := domain.Transaction{UserID: 1, Type: domain.TransactionTypeBet, Amount: 10}
+
+			err := svc.RegisterTransaction(context.Background(), tx)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("RegisterTransaction() error = %v, wantErr %v", err, tc.wantErr)
+			}
+			if !repo.saveCalled {
+				t.Fatal("RegisterTransaction() did not call repository Save")
+			}
+		})
 	}
 }
 
 func TestTransactionService_GetTransactions_ReturnsRepositoryResults(t *testing.T) {
+	repoErr := errors.New("db error")
 	want := []domain.Transaction{
 		{UserID: 1, Amount: 100},
 		{UserID: 1, Amount: 200},
 	}
-
-	repo := &mockRepository{
-		getFunc: func() ([]domain.Transaction, error) {
-			return want, nil
+	cases := []struct {
+		name    string
+		getFunc func() ([]domain.Transaction, error)
+		wantLen int
+		wantErr error
+	}{
+		{
+			name: "ok/returns_repository_results",
+			getFunc: func() ([]domain.Transaction, error) {
+				return want, nil
+			},
+			wantLen: len(want),
+		},
+		{
+			name: "err/returns_repository_error",
+			getFunc: func() ([]domain.Transaction, error) {
+				return nil, repoErr
+			},
+			wantErr: repoErr,
 		},
 	}
-	svc := NewTransactionService(repo)
 
-	got, err := svc.GetTransactions(context.Background(), 1, nil)
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			repo := &mockRepository{getFunc: tc.getFunc}
+			svc := NewTransactionService(repo)
 
-	if err != nil {
-		t.Errorf("GetTransactions() unexpected error = %v", err)
-	}
-	if len(got) != len(want) {
-		t.Errorf("GetTransactions() got %d items, want %d", len(got), len(want))
-	}
-
-	repoErr := errors.New("db error")
-	repo.getFunc = func() ([]domain.Transaction, error) {
-		return nil, repoErr
-	}
-
-	_, err = svc.GetTransactions(context.Background(), 1, nil)
-	if !errors.Is(err, repoErr) {
-		t.Errorf("GetTransactions() error = %v, want %v", err, repoErr)
+			got, err := svc.GetTransactions(context.Background(), 1, nil)
+			if !errors.Is(err, tc.wantErr) {
+				t.Fatalf("GetTransactions() error = %v, want %v", err, tc.wantErr)
+			}
+			if len(got) != tc.wantLen {
+				t.Fatalf("GetTransactions() len = %d, want %d", len(got), tc.wantLen)
+			}
+		})
 	}
 }

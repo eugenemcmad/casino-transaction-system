@@ -24,7 +24,10 @@ func TestAPI_IntegrationFlow(t *testing.T) {
 	connStr, cleanup := testutil.SetupPostgres(t)
 	defer cleanup()
 
-	repo := repository.NewPostgresRepo(connStr)
+	repo, err := repository.NewPostgresRepo(connStr)
+	if err != nil {
+		t.Fatalf("NewPostgresRepo() error = %v", err)
+	}
 	svc := service.NewTransactionService(repo)
 	handler := NewTransactionHandler(svc)
 	ctx := context.Background()

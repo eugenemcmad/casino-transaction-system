@@ -12,21 +12,27 @@ import (
 )
 
 func TestNewPostgresRepo(t *testing.T) {
-	t.Run("ok/returns_repo_for_invalid_dsn", func(t *testing.T) {
-		repo := NewPostgresRepo("://invalid-dsn")
-		if repo == nil {
-			t.Fatal("NewPostgresRepo() expected non-nil repo")
-		}
-		repo.Close()
-	})
+	cases := []struct {
+		name    string
+		dsn     string
+		wantErr bool
+	}{
+		{name: "err/returns_error_for_invalid_dsn", dsn: "://invalid-dsn", wantErr: true},
+		{name: "err/returns_error_for_unreachable_db", dsn: "postgres://user:pass@127.0.0.1:1/testdb?sslmode=disable", wantErr: true},
+	}
 
-	t.Run("ok/returns_repo_for_unreachable_db", func(t *testing.T) {
-		repo := NewPostgresRepo("postgres://user:pass@127.0.0.1:1/testdb?sslmode=disable")
-		if repo == nil {
-			t.Fatal("NewPostgresRepo() expected non-nil repo")
-		}
-		repo.Close()
-	})
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			repo, err := NewPostgresRepo(tc.dsn)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("NewPostgresRepo() error = %v, wantErr %v", err, tc.wantErr)
+			}
+			if repo != nil {
+				repo.Close()
+			}
+		})
+	}
 }
 
 func TestPostgresRepo_Save(t *testing.T) {

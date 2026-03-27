@@ -126,104 +126,79 @@ func (m *mockSvc) GetTransactions(ctx context.Context, userID int64, tType *doma
 	return nil, nil
 }
 
-func TestConsumerStart_StopsAndClosesOnContextCancel(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	reader := &mockReader{}
-	svc := &mockSvc{}
-	c := &Consumer{reader: reader, svc: svc}
-
-	time.AfterFunc(20*time.Millisecond, cancel)
-
-	if err := c.Start(ctx); err != nil {
-		t.Fatalf("Start() returned unexpected error: %v", err)
-	}
-	if !reader.closed {
-		t.Fatal("reader.Close() was not called")
-	}
-	if svc.calls != 0 {
-		t.Fatalf("expected no service calls, got %d", svc.calls)
-	}
-}
-
-func TestConsumerStart_ValidMessageCallsService(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	reader := &mockReader{
-		messages: []kafkago.Message{
-			{
-				Value: []byte(`{"user_id":11,"transaction_type":"bet","amount":12.5,"timestamp":"2026-03-27T10:00:00Z"}`),
+func TestConsumerStart_ProcessesMessagesAndHandlesErrors(t *testing.T) {
+	dbDownErr := errors.New("db down")
+	cases := []struct {
+		name       string
+		messages   []kafkago.Message
+		serviceErr error
+		wantCalls  int
+		wantTx     *domain.Transaction
+	}{
+		{
+			name:      "ok/stops_and_closes_reader_on_context_cancel",
+			messages:  nil,
+			wantCalls: 0,
+		},
+		{
+			name: "ok/valid_message_calls_service",
+			messages: []kafkago.Message{
+				{Value: []byte(`{"user_id":11,"transaction_type":"bet","amount":12.5,"timestamp":"2026-03-27T10:00:00Z"}`)},
+			},
+			wantCalls: 1,
+			wantTx: &domain.Transaction{
+				UserID: 11,
+				Type:   domain.TransactionTypeBet,
+				Amount: 12.5,
 			},
 		},
-	}
-	svc := &mockSvc{}
-	c := &Consumer{reader: reader, svc: svc}
-
-	go func() {
-		time.Sleep(20 * time.Millisecond)
-		cancel()
-	}()
-
-	if err := c.Start(ctx); err != nil {
-		t.Fatalf("Start() returned unexpected error: %v", err)
-	}
-	if svc.calls != 1 {
-		t.Fatalf("expected 1 service call, got %d", svc.calls)
-	}
-	if svc.lastTx.UserID != 11 || svc.lastTx.Amount != 12.5 || svc.lastTx.Type != domain.TransactionTypeBet {
-		t.Fatalf("unexpected transaction passed to service: %+v", svc.lastTx)
-	}
-}
-
-func TestConsumerStart_InvalidPayloadDoesNotCallService(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	reader := &mockReader{
-		messages: []kafkago.Message{
-			{Value: []byte(`{"user_id":11,"transaction_type":"bet","amount":`)},
-			{Value: []byte(`{"user_id":11,"transaction_type":"bet","amount":0}`)},
-		},
-	}
-	svc := &mockSvc{}
-	c := &Consumer{reader: reader, svc: svc}
-
-	go func() {
-		time.Sleep(20 * time.Millisecond)
-		cancel()
-	}()
-
-	if err := c.Start(ctx); err != nil {
-		t.Fatalf("Start() returned unexpected error: %v", err)
-	}
-	if svc.calls != 0 {
-		t.Fatalf("expected 0 service calls, got %d", svc.calls)
-	}
-}
-
-func TestConsumerStart_ServiceErrorIsHandledAndLoopContinues(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	reader := &mockReader{
-		messages: []kafkago.Message{
-			{
-				Value: []byte(`{"user_id":22,"transaction_type":"win","amount":45.0,"timestamp":"2026-03-27T10:00:00Z"}`),
+		{
+			name: "err/invalid_payload_does_not_call_service",
+			messages: []kafkago.Message{
+				{Value: []byte(`{"user_id":11,"transaction_type":"bet","amount":`)},
+				{Value: []byte(`{"user_id":11,"transaction_type":"bet","amount":0}`)},
 			},
+			wantCalls: 0,
+		},
+		{
+			name: "err/service_error_is_handled_and_loop_continues",
+			messages: []kafkago.Message{
+				{Value: []byte(`{"user_id":22,"transaction_type":"win","amount":45.0,"timestamp":"2026-03-27T10:00:00Z"}`)},
+			},
+			serviceErr: dbDownErr,
+			wantCalls:  1,
 		},
 	}
-	svc := &mockSvc{returnError: errors.New("db down")}
-	c := &Consumer{reader: reader, svc: svc}
 
-	go func() {
-		time.Sleep(20 * time.Millisecond)
-		cancel()
-	}()
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
 
-	if err := c.Start(ctx); err != nil {
-		t.Fatalf("Start() returned unexpected error: %v", err)
-	}
-	if svc.calls != 1 {
-		t.Fatalf("expected 1 service call, got %d", svc.calls)
+			reader := &mockReader{messages: tc.messages}
+			svc := &mockSvc{returnError: tc.serviceErr}
+			c := &Consumer{reader: reader, svc: svc}
+
+			go func() {
+				time.Sleep(20 * time.Millisecond)
+				cancel()
+			}()
+
+			if err := c.Start(ctx); err != nil {
+				t.Fatalf("Start() returned unexpected error: %v", err)
+			}
+			if !reader.closed {
+				t.Fatal("reader.Close() was not called")
+			}
+			if svc.calls != tc.wantCalls {
+				t.Fatalf("service calls = %d, want %d", svc.calls, tc.wantCalls)
+			}
+			if tc.wantTx != nil {
+				if svc.lastTx.UserID != tc.wantTx.UserID || svc.lastTx.Amount != tc.wantTx.Amount || svc.lastTx.Type != tc.wantTx.Type {
+					t.Fatalf("unexpected transaction passed to service: %+v", svc.lastTx)
+				}
+			}
+		})
 	}
 }

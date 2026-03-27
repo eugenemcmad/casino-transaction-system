@@ -4,6 +4,7 @@ import (
 	"casino-transaction-system/internal/domain"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -16,13 +17,14 @@ type PostgresRepo struct {
 	db *sql.DB
 }
 
-// NewPostgresRepo initializes DB and sets up connection pool (Tech Lead improvement)
-func NewPostgresRepo(url string) *PostgresRepo {
+// NewPostgresRepo initializes DB and validates connectivity.
+// It fails fast if database initialization is not possible.
+func NewPostgresRepo(url string) (*PostgresRepo, error) {
 	slog.Debug(MsgInitializingPostgres, "url", url)
 	db, err := sql.Open(DriverPostgres, url)
 	if err != nil {
 		slog.Error(MsgErrorOpeningDB, "error", err)
-		return nil
+		return nil, fmt.Errorf("open postgres connection: %w", err)
 	}
 
 	// Pool configuration: production-ready settings
@@ -31,14 +33,19 @@ func NewPostgresRepo(url string) *PostgresRepo {
 	db.SetConnMaxLifetime(5 * time.Minute)
 
 	if err := db.Ping(); err != nil {
-		slog.Warn(MsgDBPingFailed, "error", err)
-	} else {
-		slog.Debug(MsgDBConnectionSuccess)
+		slog.Error(MsgDBPingFailed, "error", err)
+		_ = db.Close()
+		return nil, fmt.Errorf("ping postgres: %w", err)
 	}
-	return &PostgresRepo{db: db}
+	slog.Debug(MsgDBConnectionSuccess)
+
+	return &PostgresRepo{db: db}, nil
 }
 
 func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
+	if r == nil || r.db == nil {
+		return errors.New("postgres repository is not initialized")
+	}
 	slog.Debug(MsgSavingToDB, "userID", t.UserID, "type", t.Type, "amount", t.Amount)
 
 	var ts sql.NullTime
@@ -64,6 +71,9 @@ func (r *PostgresRepo) Save(ctx context.Context, t domain.Transaction) error {
 
 // Get fetches transactions based on optional filters.
 func (r *PostgresRepo) Get(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
+	if r == nil || r.db == nil {
+		return nil, errors.New("postgres repository is not initialized")
+	}
 	slog.Debug(MsgFetchingFromDB, "userID", userID, "type", tType)
 
 	var conditions []string

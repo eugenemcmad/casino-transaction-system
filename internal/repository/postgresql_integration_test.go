@@ -19,7 +19,10 @@ func TestPostgresRepo_IntegrationFlow(t *testing.T) {
 	connStr, cleanup := testutil.SetupPostgres(t)
 	defer cleanup()
 
-	repo := NewPostgresRepo(connStr)
+	repo, err := NewPostgresRepo(connStr)
+	if err != nil {
+		t.Fatalf("NewPostgresRepo() error = %v", err)
+	}
 	ctx := context.Background()
 
 	t.Run("ok/save_is_idempotent", func(t *testing.T) {

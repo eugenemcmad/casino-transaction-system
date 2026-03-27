@@ -55,7 +55,10 @@ func TestTransactionFlow_EndToEnd(t *testing.T) {
 	config.ResetConfig()
 
 	// 3. Start System Components
-	apiApp := app.NewApiApp(cfg)
+	apiApp, err := app.NewApiApp(cfg)
+	if err != nil {
+		t.Fatalf("failed to initialize api app: %v", err)
+	}
 	processorApp, err := app.NewProcessorApp(cfg)
 	if err != nil {
 		t.Fatalf("failed to initialize processor app: %v", err)

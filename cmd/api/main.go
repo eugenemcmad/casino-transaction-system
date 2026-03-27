@@ -27,7 +27,11 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	apiApp := app.NewApiApp(cfg)
+	apiApp, err := app.NewApiApp(cfg)
+	if err != nil {
+		slog.Error("Failed to init apiApp", slog.Any("error", err))
+		os.Exit(1)
+	}
 
 	// Запуск блокирует main до отмены контекста
 	if err := apiApp.Run(ctx); err != nil {

@@ -6,6 +6,7 @@ import (
 	"casino-transaction-system/internal/service"
 	transport "casino-transaction-system/internal/transport/http"
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 )
@@ -16,9 +17,12 @@ type ApiApp struct {
 	repo   *repository.PostgresRepo
 }
 
-func NewApiApp(cfg *config.Config) *ApiApp {
+func NewApiApp(cfg *config.Config) (*ApiApp, error) {
 	// 1. Data Layer
-	repo := repository.NewPostgresRepo(cfg.Postgres.URL)
+	repo, err := repository.NewPostgresRepo(cfg.Postgres.URL)
+	if err != nil {
+		return nil, fmt.Errorf("initialize postgres repository: %w", err)
+	}
 
 	// 2. Service Layer (Business Logic)
 	svc := service.NewTransactionService(repo)
@@ -38,7 +42,7 @@ func NewApiApp(cfg *config.Config) *ApiApp {
 		cfg:    cfg,
 		server: server,
 		repo:   repo,
-	}
+	}, nil
 }
 
 func (a *ApiApp) Run(ctx context.Context) error {

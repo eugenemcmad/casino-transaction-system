@@ -5,47 +5,55 @@ import (
 	"testing"
 )
 
-func TestNewConfig_LoadsFromEnv(t *testing.T) {
-	// 1. Setup mock ENV variables
-	os.Setenv("APP_NAME", "test-app")
-	os.Setenv("APP_VERSION", "1.0.0")
-	os.Setenv("PG_URL", "postgres://user:pass@localhost:5432/db")
-	os.Setenv("KAFKA_BROKERS", "localhost:9092")
-	os.Setenv("KAFKA_TOPIC", "test-topic")
-
-	defer func() {
-		os.Unsetenv("APP_NAME")
-		os.Unsetenv("APP_VERSION")
-		os.Unsetenv("PG_URL")
-		os.Unsetenv("KAFKA_BROKERS")
-		os.Unsetenv("KAFKA_TOPIC")
-	}()
-
-	// 2. Reset singleton for test
-	ResetConfig()
-
-	// 3. Load config
-	cfg, err := NewConfig()
-	if err != nil {
-		t.Fatalf("Failed to load config: %v", err)
+func TestNewConfig_LoadsAndValidatesEnv(t *testing.T) {
+	cases := []struct {
+		name        string
+		appName     string
+		wantErr     bool
+		wantAppName string
+	}{
+		{
+			name:        "ok/loads_from_env",
+			appName:     "test-app",
+			wantErr:     false,
+			wantAppName: "test-app",
+		},
+		{
+			name:    "err/returns_error_when_app_name_missing",
+			appName: "",
+			wantErr: true,
+		},
 	}
 
-	// 4. Validate
-	if cfg.App.Name != "test-app" {
-		t.Errorf("Expected APP_NAME test-app, got %s", cfg.App.Name)
-	}
-	if cfg.Postgres.URL != "postgres://user:pass@localhost:5432/db" {
-		t.Errorf("Unexpected PG_URL: %s", cfg.Postgres.URL)
-	}
-}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.appName == "" {
+				os.Unsetenv("APP_NAME")
+			} else {
+				t.Setenv("APP_NAME", tc.appName)
+			}
+			t.Setenv("APP_VERSION", "1.0.0")
+			t.Setenv("PG_URL", "postgres://user:pass@localhost:5432/db")
+			t.Setenv("KAFKA_BROKERS", "localhost:9092")
+			t.Setenv("KAFKA_TOPIC", "test-topic")
+			os.Unsetenv("CONFIG_PATH")
 
-func TestNewConfig_ReturnsErrorWhenMandatoryFieldMissing(t *testing.T) {
-	// Clear ENV
-	os.Unsetenv("APP_NAME")
-	ResetConfig()
+			ResetConfig()
+			cfg, err := NewConfig()
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("NewConfig() error = %v, wantErr %v", err, tc.wantErr)
+			}
+			if tc.wantErr {
+				return
+			}
 
-	_, err := NewConfig()
-	if err == nil {
-		t.Error("Expected error when mandatory APP_NAME is missing, got nil")
+			if cfg.App.Name != tc.wantAppName {
+				t.Fatalf("cfg.App.Name = %q, want %q", cfg.App.Name, tc.wantAppName)
+			}
+			if cfg.Postgres.URL != "postgres://user:pass@localhost:5432/db" {
+				t.Fatalf("cfg.Postgres.URL = %q, want %q", cfg.Postgres.URL, "postgres://user:pass@localhost:5432/db")
+			}
+		})
 	}
 }

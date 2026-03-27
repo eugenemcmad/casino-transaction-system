@@ -6,6 +6,7 @@ import (
 	"casino-transaction-system/internal/service"
 	transport "casino-transaction-system/internal/transport/kafka"
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 )
@@ -19,7 +20,10 @@ type ProcessorApp struct {
 
 func NewProcessorApp(cfg *config.Config) (*ProcessorApp, error) {
 	// 1. Data Layer
-	repo := repository.NewPostgresRepo(cfg.Postgres.URL)
+	repo, err := repository.NewPostgresRepo(cfg.Postgres.URL)
+	if err != nil {
+		return nil, fmt.Errorf("initialize postgres repository: %w", err)
+	}
 
 	// 2. Service Layer (Business Logic)
 	svc := service.NewTransactionService(repo)
