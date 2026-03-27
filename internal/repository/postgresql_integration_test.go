@@ -44,24 +44,37 @@ func TestPostgresRepo_IntegrationFlow(t *testing.T) {
 		}
 
 		// Verify only one entry exists
-		res, _ := repo.Get(ctx, 12345, nil)
-		if len(res) != 1 {
-			t.Errorf("idempotency check failed: expected 1 record, got %d", len(res))
+		res, err := repo.Get(ctx, 12345, nil)
+		if err != nil {
+			t.Fatalf("repo.Get() error = %v", err)
+		}
+		wantLen := 1
+		if len(res) != wantLen {
+			t.Errorf("len(res) = %d, want %d", len(res), wantLen)
 		}
 	})
 
 	t.Run("ok/get_sorts_by_timestamp_desc", func(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Second)
-		_ = repo.Save(ctx, domain.Transaction{UserID: 1, Type: "bet", Amount: 1000, Timestamp: now.Add(-time.Hour)})
-		_ = repo.Save(ctx, domain.Transaction{UserID: 1, Type: "win", Amount: 2000, Timestamp: now})
+		if err := repo.Save(ctx, domain.Transaction{UserID: 1, Type: "bet", Amount: 1000, Timestamp: now.Add(-time.Hour)}); err != nil {
+			t.Fatalf("repo.Save() error = %v", err)
+		}
+		if err := repo.Save(ctx, domain.Transaction{UserID: 1, Type: "win", Amount: 2000, Timestamp: now}); err != nil {
+			t.Fatalf("repo.Save() error = %v", err)
+		}
 
 		// Test retrieval and sorting (Default is DESC)
-		res, _ := repo.Get(ctx, 1, nil)
-		if len(res) != 2 {
-			t.Errorf("expected 2 records, got %d", len(res))
+		res, err := repo.Get(ctx, 1, nil)
+		if err != nil {
+			t.Fatalf("repo.Get() error = %v", err)
 		}
-		if res[0].Amount != 2000 {
-			t.Error("sorting check failed: latest transaction should be first")
+		wantLen := 2
+		if len(res) != wantLen {
+			t.Errorf("len(res) = %d, want %d", len(res), wantLen)
+		}
+		wantFirstAmount := int64(2000)
+		if len(res) > 0 && res[0].Amount != wantFirstAmount {
+			t.Errorf("res[0].Amount = %d, want %d (latest first)", res[0].Amount, wantFirstAmount)
 		}
 	})
 }

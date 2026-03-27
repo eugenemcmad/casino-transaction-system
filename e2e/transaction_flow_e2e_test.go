@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strconv"
 	"testing"
@@ -22,6 +23,16 @@ import (
 	_ "github.com/lib/pq"
 	kafkago "github.com/segmentio/kafka-go"
 )
+
+func pickFreeTCPPort(t *testing.T) string {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("net.Listen() error = %v", err)
+	}
+	defer ln.Close()
+	return strconv.Itoa(ln.Addr().(*net.TCPAddr).Port)
+}
 
 // TestTransactionFlow_E2E verifies the entire asynchronous chain:
 // Kafka -> Processor -> PostgreSQL -> HTTP API
@@ -48,7 +59,7 @@ func TestTransactionFlow_EndToEnd(t *testing.T) {
 	cfg.Kafka.Brokers = []string{broker}
 	cfg.Kafka.Topic = topic
 	cfg.Kafka.GroupID = "e2e-group-" + uniqueID
-	cfg.HTTP.Port = "8083"
+	cfg.HTTP.Port = pickFreeTCPPort(t)
 	cfg.App.Name = "e2e-test-app"
 	cfg.App.Version = "1.0.0"
 
@@ -57,11 +68,11 @@ func TestTransactionFlow_EndToEnd(t *testing.T) {
 	// 3. Start System Components
 	apiApp, err := bootstrap.NewApiApp(cfg)
 	if err != nil {
-		t.Fatalf("failed to initialize api app: %v", err)
+		t.Fatalf("bootstrap.NewApiApp() error = %v", err)
 	}
 	processorApp, err := bootstrap.NewProcessorApp(cfg)
 	if err != nil {
-		t.Fatalf("failed to initialize processor app: %v", err)
+		t.Fatalf("bootstrap.NewProcessorApp() error = %v", err)
 	}
 
 	appCtx, appStop := context.WithCancel(ctx)
@@ -90,13 +101,13 @@ func TestTransactionFlow_EndToEnd(t *testing.T) {
 	}
 	payload, _ := json.Marshal(testTx)
 	if err := writer.WriteMessages(ctx, kafkago.Message{Value: payload}); err != nil {
-		t.Fatalf("failed to send test message: %v", err)
+		t.Fatalf("WriteMessages() error = %v", err)
 	}
 	t.Log("message seeded successfully")
 
 	// 5. Assert: Verify result via Query API (Polling)
 	t.Log("polling query API for result")
-	apiURL := "http://127.0.0.1:8083"
+	apiURL := "http://127.0.0.1:" + cfg.HTTP.Port
 	var transactions []transport.TransactionResponse
 	success := false
 
@@ -116,13 +127,16 @@ func TestTransactionFlow_EndToEnd(t *testing.T) {
 	}
 
 	if !success {
-		t.Fatal("e2e flow failed: transaction was not found in DB via API")
+		t.Fatal("poll API: no transaction found within deadline")
 	}
 
 	// 6. Data Validation
 	got := transactions[0]
-	if got.UserID != testUserID || got.Amount != testAmount {
-		t.Errorf("data mismatch: expected userID %d and amount %d, got %+v", testUserID, testAmount, got)
+	if got.UserID != testUserID {
+		t.Errorf("UserID = %d, want %d", got.UserID, testUserID)
+	}
+	if got.Amount != testAmount {
+		t.Errorf("Amount = %d, want %d", got.Amount, testAmount)
 	}
 	t.Log("e2e transaction flow verified successfully")
 }

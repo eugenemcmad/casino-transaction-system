@@ -27,7 +27,7 @@ func TestNewApiApp_IntegrationSmoke(t *testing.T) {
 		t.Fatalf("NewApiApp() error = %v", err)
 	}
 	if app == nil {
-		t.Fatal("NewApiApp() returned nil")
+		t.Fatal("NewApiApp() = nil, want non-nil")
 	}
 }
 
@@ -51,6 +51,6 @@ func TestNewProcessorApp_IntegrationSmoke(t *testing.T) {
 		t.Fatalf("NewProcessorApp() error = %v", err)
 	}
 	if app == nil {
-		t.Fatal("NewProcessorApp() returned nil")
+		t.Fatal("NewProcessorApp() = nil, want non-nil")
 	}
 }

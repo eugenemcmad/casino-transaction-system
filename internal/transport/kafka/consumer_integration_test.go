@@ -15,16 +15,16 @@ import (
 	kafkago "github.com/segmentio/kafka-go"
 )
 
-type mockServiceIntegration struct {
+type mockIntegrationSvc struct {
 	processedChan chan domain.Transaction
 }
 
-func (m *mockServiceIntegration) RegisterTransaction(ctx context.Context, t domain.Transaction) error {
+func (m *mockIntegrationSvc) RegisterTransaction(ctx context.Context, t domain.Transaction) error {
 	m.processedChan <- t
 	return nil
 }
 
-func (m *mockServiceIntegration) GetTransactions(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
+func (m *mockIntegrationSvc) GetTransactions(ctx context.Context, userID int64, tType *domain.TransactionType) ([]domain.Transaction, error) {
 	return nil, nil
 }
 
@@ -39,7 +39,7 @@ func TestKafkaConsumer_IntegrationFlow(t *testing.T) {
 	topic := "component-test-" + strconv.FormatInt(time.Now().UnixNano(), 10)
 	testutil.CreateTopicAndWait(t, broker, topic)
 
-	mockSvc := &mockServiceIntegration{
+	mockSvc := &mockIntegrationSvc{
 		processedChan: make(chan domain.Transaction, 1),
 	}
 
@@ -69,17 +69,22 @@ func TestKafkaConsumer_IntegrationFlow(t *testing.T) {
 	}
 	payload, _ := json.Marshal(testTx)
 	if err := writer.WriteMessages(ctx, kafkago.Message{Value: payload}); err != nil {
-		t.Fatalf("failed to write message: %v", err)
+		t.Fatalf("WriteMessages() error = %v", err)
 	}
 
 	// 4. Assert
+	wantUserID := int64(555)
+	wantAmount := int64(1050)
 	select {
 	case got := <-mockSvc.processedChan:
-		if got.UserID != 555 || got.Amount != 1050 {
-			t.Errorf("data mismatch: %+v", got)
+		if got.UserID != wantUserID {
+			t.Errorf("UserID = %d, want %d", got.UserID, wantUserID)
+		}
+		if got.Amount != wantAmount {
+			t.Errorf("Amount = %d, want %d", got.Amount, wantAmount)
 		}
 		t.Log("consumer integration test successful")
 	case <-time.After(20 * time.Second):
-		t.Error("timeout: consumer failed to process message")
+		t.Fatal("timeout waiting for RegisterTransaction")
 	}
 }

@@ -44,36 +44,55 @@ func TestAPI_IntegrationFlow(t *testing.T) {
 		_, _ = db.Exec("DELETE FROM transactions")
 
 		uid := int64(2024)
-		_ = repo.Save(ctx, domain.Transaction{UserID: uid, Type: domain.TransactionTypeWin, Amount: 500})
+		if err := repo.Save(ctx, domain.Transaction{UserID: uid, Type: domain.TransactionTypeWin, Amount: 500}); err != nil {
+			t.Fatalf("repo.Save() error = %v", err)
+		}
 
 		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/transactions?user_id=%d", uid), nil)
 		w := httptest.NewRecorder()
 		handler.GetTransactions(w, req)
 
-		var resp []TransactionResponse
-		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
-			t.Fatalf("failed to decode json: %v", err)
+		if w.Code != http.StatusOK {
+			t.Fatalf("GetTransactions() status = %d, want %d", w.Code, http.StatusOK)
 		}
-		if len(resp) != 1 || resp[0].UserID != uid {
-			t.Errorf("expected 1 record for user %d, got %d", uid, len(resp))
+
+		var got []TransactionResponse
+		if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
+			t.Fatalf("json.Decode() error = %v", err)
+		}
+		wantLen := 1
+		if len(got) != wantLen {
+			t.Fatalf("len(resp) = %d, want %d", len(got), wantLen)
+		}
+		if got[0].UserID != uid {
+			t.Errorf("resp[0].UserID = %d, want %d", got[0].UserID, uid)
 		}
 	})
 
 	t.Run("ok/returns_all_users_when_no_filters", func(t *testing.T) {
 		_, _ = db.Exec("DELETE FROM transactions")
-		repo.Save(ctx, domain.Transaction{UserID: 1, Type: "bet", Amount: 10})
-		repo.Save(ctx, domain.Transaction{UserID: 2, Type: "win", Amount: 20})
+		if err := repo.Save(ctx, domain.Transaction{UserID: 1, Type: "bet", Amount: 10}); err != nil {
+			t.Fatalf("repo.Save() error = %v", err)
+		}
+		if err := repo.Save(ctx, domain.Transaction{UserID: 2, Type: "win", Amount: 20}); err != nil {
+			t.Fatalf("repo.Save() error = %v", err)
+		}
 
 		req := httptest.NewRequest(http.MethodGet, "/transactions", nil)
 		w := httptest.NewRecorder()
 		handler.GetTransactions(w, req)
 
-		var resp []TransactionResponse
-		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
-			t.Fatalf("failed to decode response: %v", err)
+		if w.Code != http.StatusOK {
+			t.Fatalf("GetTransactions() status = %d, want %d", w.Code, http.StatusOK)
 		}
-		if len(resp) != 2 {
-			t.Errorf("expected total of 2 records, got %d", len(resp))
+
+		var got []TransactionResponse
+		if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
+			t.Fatalf("json.Decode() error = %v", err)
+		}
+		wantLen := 2
+		if len(got) != wantLen {
+			t.Errorf("len(resp) = %d, want %d", len(got), wantLen)
 		}
 	})
 }
