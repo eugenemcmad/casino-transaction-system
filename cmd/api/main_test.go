@@ -43,3 +43,34 @@ func TestMain_ExitsOnInvalidConfig(t *testing.T) {
 		t.Fatalf("exit code = %d, want 1", exitErr.ExitCode())
 	}
 }
+
+func TestMain_ExitsOnApiAppInitError(t *testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") == "1" {
+		main()
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=TestMain_ExitsOnApiAppInitError")
+	cmd.Env = append(os.Environ(),
+		"GO_WANT_HELPER_PROCESS=1",
+		"CONFIG_PATH=does-not-exist.yaml",
+		"APP_NAME=test-app",
+		"APP_VERSION=1.0.0",
+		"PG_URL=postgres://user:pass@127.0.0.1:1/testdb?sslmode=disable",
+		"KAFKA_BROKERS=localhost:9092",
+		"KAFKA_TOPIC=test-topic",
+	)
+
+	err := cmd.Run()
+	if err == nil {
+		t.Fatal("expected non-zero exit code, got nil error")
+	}
+
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok {
+		t.Fatalf("expected *exec.ExitError, got %T", err)
+	}
+	if exitErr.ExitCode() != 1 {
+		t.Fatalf("exit code = %d, want 1", exitErr.ExitCode())
+	}
+}

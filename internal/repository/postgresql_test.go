@@ -190,3 +190,22 @@ func TestPostgresRepo_Close(t *testing.T) {
 		repo.Close()
 	})
 }
+
+func TestPostgresRepo_Save_ReturnsErrorForUninitializedRepo(t *testing.T) {
+	repo := &PostgresRepo{}
+	tx := domain.Transaction{UserID: 1, Type: domain.TransactionTypeBet, Amount: 10}
+
+	err := repo.Save(context.Background(), tx)
+	if err == nil {
+		t.Fatal("Save() expected error for uninitialized repository, got nil")
+	}
+}
+
+func TestPostgresRepo_Get_ReturnsErrorForUninitializedRepo(t *testing.T) {
+	repo := &PostgresRepo{}
+
+	_, err := repo.Get(context.Background(), 1, nil)
+	if err == nil {
+		t.Fatal("Get() expected error for uninitialized repository, got nil")
+	}
+}

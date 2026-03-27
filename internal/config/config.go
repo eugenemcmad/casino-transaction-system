@@ -47,32 +47,32 @@ var (
 	once     sync.Once
 )
 
-// NewConfig reads config from file (if exists) and overrides it with environment variables
+// NewConfig reads config from file (if exists) and then applies environment overrides.
 func NewConfig() (*Config, error) {
 	var err error
 	once.Do(func() {
 		instance = &Config{}
 
-		// 1. Берем путь из переменной окружения или используем дефолт
+		// Resolve config path from env or use default.
 		configPath := os.Getenv("CONFIG_PATH")
 		if configPath == "" {
-			configPath = "config.yaml" // Дефолт в корне
+			configPath = "config.yaml"
 		}
 
-		// Проверяем, существует ли файл
+		// Read file config when available.
 		if _, statErr := os.Stat(configPath); statErr == nil {
-			// Файл есть, читаем его
 			if readErr := cleanenv.ReadConfig(configPath, instance); readErr != nil {
 				err = fmt.Errorf("read config file error: %w", readErr)
 				return
 			}
 		} else {
-			// Файла нет, сообщаем и идем дальше читать ENV
 			fmt.Printf("Config file not found at %s, using defaults and ENV variables\n", configPath)
-			if readErr := cleanenv.ReadEnv(instance); readErr != nil {
-				err = fmt.Errorf("read env error: %w", readErr)
-				return
-			}
+		}
+
+		// Always apply environment values as final override source.
+		if readErr := cleanenv.ReadEnv(instance); readErr != nil {
+			err = fmt.Errorf("read env error: %w", readErr)
+			return
 		}
 	})
 
