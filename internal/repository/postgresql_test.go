@@ -1,64 +1,186 @@
-//go:build integration
-
 package repository
 
 import (
 	"casino-transaction-system/internal/domain"
-	"casino-transaction-system/internal/testutil"
 	"context"
+	"database/sql"
+	"errors"
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/DATA-DOG/go-sqlmock"
 )
 
-// TestPostgresRepo_Integration provides isolated testing for the Data Access Layer.
-// It uses testcontainers to ensure a clean, real PostgreSQL environment.
-func TestPostgresRepo_Integration(t *testing.T) {
-	// 1. Setup isolated database
-	connStr, cleanup := testutil.SetupPostgres(t)
-	defer cleanup()
+func TestNewPostgresRepo(t *testing.T) {
+	t.Run("invalid DSN still creates repo object", func(t *testing.T) {
+		repo := NewPostgresRepo("://invalid-dsn")
+		if repo == nil {
+			t.Fatal("NewPostgresRepo() expected non-nil repo")
+		}
+		repo.Close()
+	})
 
-	repo := NewPostgresRepo(connStr)
-	ctx := context.Background()
+	t.Run("unreachable db still returns repo instance", func(t *testing.T) {
+		repo := NewPostgresRepo("postgres://user:pass@127.0.0.1:1/testdb?sslmode=disable")
+		if repo == nil {
+			t.Fatal("NewPostgresRepo() expected non-nil repo")
+		}
+		repo.Close()
+	})
+}
 
-	t.Run("Action: Save and Handle Idempotency", func(t *testing.T) {
-		tr := domain.Transaction{
-			UserID:    12345,
+func TestPostgresRepo_Save(t *testing.T) {
+	t.Run("save with timestamp", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatalf("sqlmock.New() error = %v", err)
+		}
+		defer db.Close()
+
+		repo := &PostgresRepo{db: db}
+		tx := domain.Transaction{
+			UserID:    10,
 			Type:      domain.TransactionTypeBet,
-			Amount:    99.99,
-			Timestamp: time.Now().UTC().Truncate(time.Microsecond),
+			Amount:    15.5,
+			Timestamp: time.Now().UTC(),
 		}
 
-		// Save first time
-		if err := repo.Save(ctx, tr); err != nil {
-			t.Fatalf("failed initial save: %v", err)
+		mock.ExpectExec("INSERT INTO transactions").
+			WithArgs(tx.UserID, string(tx.Type), tx.Amount, sqlmock.AnyArg()).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		if err := repo.Save(context.Background(), tx); err != nil {
+			t.Fatalf("Save() error = %v", err)
 		}
 
-		// Save same data again (should be ignored by ON CONFLICT)
-		if err := repo.Save(ctx, tr); err != nil {
-			t.Fatalf("failed duplicate save: %v", err)
-		}
-
-		// Verify only one entry exists
-		res, _ := repo.Get(ctx, 12345, nil)
-		if len(res) != 1 {
-			t.Errorf("idempotency check failed: expected 1 record, got %d", len(res))
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet sql expectations: %v", err)
 		}
 	})
 
-	t.Run("Action: Filter and Sort transactions", func(t *testing.T) {
-		now := time.Now().UTC().Truncate(time.Second)
-		_ = repo.Save(ctx, domain.Transaction{UserID: 1, Type: "bet", Amount: 10, Timestamp: now.Add(-time.Hour)})
-		_ = repo.Save(ctx, domain.Transaction{UserID: 1, Type: "win", Amount: 20, Timestamp: now})
+	t.Run("save returns db error", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatalf("sqlmock.New() error = %v", err)
+		}
+		defer db.Close()
 
-		// Test retrieval and sorting (Default is DESC)
-		res, _ := repo.Get(ctx, 1, nil)
-		if len(res) != 2 {
-			t.Errorf("expected 2 records, got %d", len(res))
+		repo := &PostgresRepo{db: db}
+		tx := domain.Transaction{
+			UserID: 1,
+			Type:   domain.TransactionTypeWin,
+			Amount: 1.25,
 		}
-		if res[0].Amount != 20 {
-			t.Error("sorting check failed: latest transaction should be first")
+
+		mock.ExpectExec("INSERT INTO transactions").
+			WithArgs(tx.UserID, string(tx.Type), tx.Amount, sql.NullTime{}).
+			WillReturnError(errors.New("insert failed"))
+
+		if err := repo.Save(context.Background(), tx); err == nil {
+			t.Fatal("Save() expected error, got nil")
 		}
+	})
+}
+
+func TestPostgresRepo_Get(t *testing.T) {
+	t.Run("get with all filters and nullable timestamp", func(t *testing.T) {
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		if err != nil {
+			t.Fatalf("sqlmock.New() error = %v", err)
+		}
+		defer db.Close()
+
+		repo := &PostgresRepo{db: db}
+		txType := domain.TransactionTypeBet
+		expectedQuery := QueryGetTransactionsBase +
+			" AND user_id = $1 AND type = $2" +
+			QueryOrderByTimestampDesc
+
+		now := time.Now().UTC()
+		rows := sqlmock.NewRows([]string{"user_id", "type", "amount", "timestamp", "created_at"}).
+			AddRow(int64(7), "bet", 13.7, now, now).
+			AddRow(int64(7), "win", 20.0, nil, now)
+
+		mock.ExpectQuery(expectedQuery).
+			WithArgs(int64(7), "bet").
+			WillReturnRows(rows)
+
+		got, err := repo.Get(context.Background(), 7, &txType)
+		if err != nil {
+			t.Fatalf("Get() error = %v", err)
+		}
+		if len(got) != 2 {
+			t.Fatalf("Get() len = %d, want 2", len(got))
+		}
+		if got[0].Timestamp.IsZero() {
+			t.Fatal("expected first timestamp to be set")
+		}
+		if !got[1].Timestamp.IsZero() {
+			t.Fatal("expected second timestamp to be zero for NULL DB value")
+		}
+	})
+
+	t.Run("get returns query error", func(t *testing.T) {
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		if err != nil {
+			t.Fatalf("sqlmock.New() error = %v", err)
+		}
+		defer db.Close()
+
+		repo := &PostgresRepo{db: db}
+		expectedQuery := QueryGetTransactionsBase +
+			" AND user_id = $1" +
+			QueryOrderByTimestampDesc
+
+		mock.ExpectQuery(expectedQuery).
+			WithArgs(int64(99)).
+			WillReturnError(errors.New("query failed"))
+
+		_, err = repo.Get(context.Background(), 99, nil)
+		if err == nil {
+			t.Fatal("Get() expected error, got nil")
+		}
+	})
+
+	t.Run("get returns scan error", func(t *testing.T) {
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		if err != nil {
+			t.Fatalf("sqlmock.New() error = %v", err)
+		}
+		defer db.Close()
+
+		repo := &PostgresRepo{db: db}
+		expectedQuery := QueryGetTransactionsBase + QueryOrderByTimestampDesc
+		rows := sqlmock.NewRows([]string{"user_id", "type", "amount", "timestamp", "created_at"}).
+			AddRow("bad-user-id", "bet", 10.0, time.Now().UTC(), time.Now().UTC())
+
+		mock.ExpectQuery(expectedQuery).WillReturnRows(rows)
+
+		_, err = repo.Get(context.Background(), 0, nil)
+		if err == nil {
+			t.Fatal("Get() expected scan error, got nil")
+		}
+	})
+}
+
+func TestPostgresRepo_Close(t *testing.T) {
+	t.Run("close with non nil db", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatalf("sqlmock.New() error = %v", err)
+		}
+
+		repo := &PostgresRepo{db: db}
+		mock.ExpectClose()
+		repo.Close()
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet sql expectations: %v", err)
+		}
+	})
+
+	t.Run("close with nil db", func(t *testing.T) {
+		repo := &PostgresRepo{}
+		repo.Close()
 	})
 }

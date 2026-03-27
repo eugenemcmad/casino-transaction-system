@@ -1,4 +1,4 @@
-//go:build integration || test
+//go:build integration || test || e2e
 
 package testutil
 
