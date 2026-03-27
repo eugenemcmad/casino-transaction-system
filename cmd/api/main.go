@@ -1,6 +1,11 @@
+// @title Casino Transaction System API
+// @version 1.0
+// @description API for reading casino transactions.
+// @BasePath /
 package main
 
 import (
+	_ "casino-transaction-system/docs"
 	"casino-transaction-system/internal/bootstrap"
 	"casino-transaction-system/internal/config"
 	"casino-transaction-system/pkg/logger"

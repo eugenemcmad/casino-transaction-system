@@ -18,8 +18,18 @@ func NewTransactionHandler(svc service.TransactionService) *TransactionHandler {
 	return &TransactionHandler{svc: svc}
 }
 
-// GetTransactions retrieves the transaction history.
-// Supports filtering by user_id and transaction_type.
+// GetTransactions godoc
+// @Summary Get transactions
+// @Description Returns transactions with optional filters by user_id and transaction_type.
+// @Tags transactions
+// @Produce json
+// @Param user_id query int false "Filter by user ID (>0)"
+// @Param transaction_type query string false "Filter by type" Enums(bet,win)
+// @Success 200 {array} TransactionResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 503 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /transactions [get]
 func (h *TransactionHandler) GetTransactions(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("HTTP GetTransactions request received", "query", r.URL.RawQuery)
 	userIDStr := r.URL.Query().Get("user_id")
