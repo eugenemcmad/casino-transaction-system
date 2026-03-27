@@ -4,6 +4,7 @@ import (
 	"casino-transaction-system/internal/config"
 	"context"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 )
@@ -11,6 +12,17 @@ import (
 type noopCloser struct{}
 
 func (noopCloser) Close() {}
+
+type countingCloser struct {
+	mu    sync.Mutex
+	calls int
+}
+
+func (c *countingCloser) Close() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.calls++
+}
 
 type noopConsumer struct{}
 
@@ -56,5 +68,19 @@ func TestNewProcessorApp_CreatesInstance(t *testing.T) {
 	app := NewProcessorApp(cfg, noopConsumer{}, noopCloser{})
 	if app == nil {
 		t.Fatal("NewProcessorApp() returned nil")
+	}
+}
+
+func TestApiApp_closeResources_ClosesOnlyOnce(t *testing.T) {
+	closer := &countingCloser{}
+	app := &ApiApp{closer: closer}
+
+	app.closeResources()
+	app.closeResources()
+
+	closer.mu.Lock()
+	defer closer.mu.Unlock()
+	if closer.calls != 1 {
+		t.Fatalf("closeResources() calls = %d, want 1", closer.calls)
 	}
 }

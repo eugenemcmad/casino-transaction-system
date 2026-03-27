@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"casino-transaction-system/internal/config"
+	"strings"
 	"testing"
 )
 
@@ -16,6 +17,9 @@ func TestNewApiApp_ReturnsErrorOnRepoInitFailure(t *testing.T) {
 	}
 	if app != nil {
 		t.Fatal("NewApiApp() expected nil app on error")
+	}
+	if !strings.Contains(err.Error(), "initialize postgres repository") {
+		t.Fatalf("NewApiApp() error = %v, want wrapped init message", err)
 	}
 }
 
@@ -32,5 +36,8 @@ func TestNewProcessorApp_ReturnsErrorOnRepoInitFailure(t *testing.T) {
 	}
 	if app != nil {
 		t.Fatal("NewProcessorApp() expected nil app on error")
+	}
+	if !strings.Contains(err.Error(), "initialize postgres repository") {
+		t.Fatalf("NewProcessorApp() error = %v, want wrapped init message", err)
 	}
 }
