@@ -1,6 +1,6 @@
 # Development — build, run, test
 
-Checklist for running and verifying the project locally. Test **style** and naming: [`TESTING.md`](TESTING.md). Runtime **settings**: [`README.md`](README.md#configuration).
+Checklist for running and verifying the project locally. Test **style** and naming: [`TESTING.md`](TESTING.md). Runtime **settings**: [`README.md`](../README.md#configuration).
 
 ---
 
@@ -48,7 +48,7 @@ go build -o bin/processor ./cmd/processor
 
 ## Database migrations
 
-SQL files are in [`migrations/`](migrations/). In dev Compose, migrations run automatically via the `migrate` service.
+SQL files are in [`migrations/`](../migrations/). In dev Compose, migrations run automatically via the `migrate` service.
 
 **Local [`migrate`](https://github.com/golang-migrate/migrate) CLI:**
 
@@ -85,7 +85,7 @@ docker compose -f docker-compose.dev.yaml up -d --build
 1. Start **PostgreSQL** and **Kafka**.
 2. Apply **migrations** (see above).
 3. Create the Kafka **topic** (name must match `KAFKA_TOPIC`).
-4. Set **environment variables** — [README → Configuration](README.md#configuration).
+4. Set **environment variables** — [README → Configuration](../README.md#configuration).
 5. `go run ./cmd/processor`
 6. `go run ./cmd/api` (second terminal)
 

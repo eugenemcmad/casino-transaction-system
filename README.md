@@ -4,11 +4,11 @@ Go service that ingests **bet/win** transactions from **Kafka**, stores them in 
 
 ## Documentation
 
-| Doc | Contents |
-|-----|----------|
-| **[`DEVELOPMENT.md`](DEVELOPMENT.md)** | Clone, build, migrations, run (Docker Compose or local binaries), tests, coverage, Make targets |
-| **[`TESTING.md`](TESTING.md)** | Test types, naming, style (not how to run — see `DEVELOPMENT.md`) |
-| **[`docs/kafka-consumer.md`](docs/kafka-consumer.md)** | Processor consumer: sequential processing, scaling (partitions / replicas), why no in-process worker pool |
+| Doc                                               | Contents |
+|---------------------------------------------------|----------|
+| **[`DEVELOPMENT.md`](docs/DEVELOPMENT.md)**       | Clone, build, migrations, run (Docker Compose or local binaries), tests, coverage, Make targets |
+| **[`TESTING.md`](docs/TESTING.md)**               | Test types, naming, style (not how to run — see `DEVELOPMENT.md`) |
+| **[`KAFKA-CONSUMER.md`](docs/kafka-consumer.md)** | Processor consumer: sequential processing, scaling (partitions / replicas), why no in-process worker pool |
 
 ---
 
@@ -55,7 +55,7 @@ go run ./cmd/api
 
 Copy [`config.yaml`](config.yaml) and adjust URLs for your environment.
 
-**Run the full stack, migrations, and tests:** [`DEVELOPMENT.md`](DEVELOPMENT.md).
+**Run the full stack, migrations, and tests:** [`DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
 ---
 
