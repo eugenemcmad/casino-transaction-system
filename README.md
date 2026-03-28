@@ -8,6 +8,7 @@ Go service that ingests **bet/win** transactions from **Kafka**, stores them in 
 |-----|----------|
 | **[`DEVELOPMENT.md`](DEVELOPMENT.md)** | Clone, build, migrations, run (Docker Compose or local binaries), tests, coverage, Make targets |
 | **[`TESTING.md`](TESTING.md)** | Test types, naming, style (not how to run — see `DEVELOPMENT.md`) |
+| **[`docs/kafka-consumer.md`](docs/kafka-consumer.md)** | Processor consumer: sequential processing, scaling (partitions / replicas), why no in-process worker pool |
 
 ---
 

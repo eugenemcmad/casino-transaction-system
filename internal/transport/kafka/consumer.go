@@ -1,4 +1,8 @@
 // Package kafka implements a Kafka consumer that decodes DTOs and registers domain transactions.
+//
+// Processing is sequential (one message at a time per consumer) so offset handling stays aligned
+// with persistence. To scale throughput, add topic partitions and processor replicas in the same
+// consumer group; see docs/kafka-consumer.md.
 package kafka
 
 import (
@@ -46,6 +50,7 @@ func NewConsumer(brokers []string, topic, groupID string, svc service.Transactio
 
 // Start blocks reading messages until ctx is cancelled or the reader fails permanently.
 // Invalid payloads are skipped; transient read/process errors apply a jittered backoff.
+// Messages are handled synchronously (no worker pool); see docs/kafka-consumer.md.
 func (c *Consumer) Start(ctx context.Context) error {
 	slog.Info("Starting Kafka consumer loop...")
 	c.cfg = withDefaultKafkaConfig(c.cfg)
